@@ -19,12 +19,32 @@ protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
 
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Config")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Config")
 	TSubclassOf<class AFish> FishClass;
 
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Config")
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Config")
 	int32 FishNum;
 
+	//These defines how strong is each rule. Needs fine-tuning
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Boid")
+	double rule_1_scale;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Boid")
+	double rule_2_scale;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Boid")
+	double rule_3_scale;
+	
+	//These defines how close the boids should be to be considered in the rules
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Boid")
+	double rule_1_dist;
+	
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Boid")
+	double rule_2_dist;
+	
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Boid")
+	double rule_3_dist;
+	
 	
 public:	
 	// Called every frame
@@ -37,17 +57,10 @@ private:
 	FVector Rule_1_Cohesion(AFish* Fish);
 	FVector Rule_2_Seperation(AFish* Fish);
 	FVector Rule_3_Alignment(AFish* Fish);
-	
+
+
 private:
 	TArray<class AFish*> Fishes;
-	//These defines how strong is each rule. Needs fine-tuning
-	double rule_1_scale;
-	double rule_2_scale;
-	double rule_3_scale;
-	//These defines how close the boids should be to be considered in the rules
-	double rule_1_dist;
-	double rule_2_dist;
-	double rule_3_dist;
 };
 
 

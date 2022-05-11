@@ -79,13 +79,17 @@ void AFishGroup::UpdateFishVelocities(float DeltaTime)
 
 		//Rule 1: Boids try to fly towards the centre of mass of neighbouring boids.
 		FVector rule1_vec = Rule_1_Cohesion(Fish);
+
 		//Rule 2: Boids try to keep a small distance away from other objects (including other boids).
 		FVector rule2_vec = Rule_2_Seperation(Fish);
+
 		//Rule 3: Boids try to match velocity with near boids.
 		FVector rule3_vec = Rule_3_Alignment(Fish);
 		
+		
 		//Add to old velocity
 		Fish->Velocity += rule_1_scale * rule1_vec + rule_2_scale * rule2_vec + rule_3_scale * rule3_vec;
+		UE_LOG(LogTemp, Warning, TEXT("fish vel is %s"), *Fish->Velocity.ToString());
 		//Set a maximum threshold for velocity?
 	}
 }
