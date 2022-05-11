@@ -34,10 +34,20 @@ public:
 private:
 	void InitFishPositions();
 	void UpdateFishVelocities(float DeltaTime);
+	FVector Rule_1_Cohesion(AFish* Fish);
+	FVector Rule_2_Seperation(AFish* Fish);
+	FVector Rule_3_Alignment(AFish* Fish);
 	
 private:
 	TArray<class AFish*> Fishes;
-
+	//These defines how strong is each rule. Needs fine-tuning
+	double rule_1_scale;
+	double rule_2_scale;
+	double rule_3_scale;
+	//These defines how close the boids should be to be considered in the rules
+	double rule_1_dist;
+	double rule_2_dist;
+	double rule_3_dist;
 };
 
 

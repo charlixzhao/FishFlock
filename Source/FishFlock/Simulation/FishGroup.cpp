@@ -10,7 +10,16 @@ AFishGroup::AFishGroup()
 {
  	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
-
+	//set boids rule scales
+	//Cohesion
+	rule_1_scale = 1.0;
+	rule_1_dist = 999.0;
+	//Seperation
+	rule_2_scale = 1.0;
+	rule_2_dist = 999.0;
+	//Alignment
+	rule_3_scale = 1.0;
+	rule_3_dist = 999.0;
 }
 
 // Called when the game starts or when spawned
@@ -67,6 +76,84 @@ void AFishGroup::UpdateFishVelocities(float DeltaTime)
 	{
 		//dummy placeholder: set the velocity to zero
 		Fish->Velocity = FVector::ZeroVector;
+
+		//Rule 1: Boids try to fly towards the centre of mass of neighbouring boids.
+		FVector rule1_vec = Rule_1_Cohesion(Fish);
+		//Rule 2: Boids try to keep a small distance away from other objects (including other boids).
+		FVector rule2_vec = Rule_2_Seperation(Fish);
+		//Rule 3: Boids try to match velocity with near boids.
+		FVector rule3_vec = Rule_3_Alignment(Fish);
+		
+		//Add to old velocity
+		Fish->Velocity += rule_1_scale * rule1_vec + rule_2_scale * rule2_vec + rule_3_scale * rule3_vec;
+		//Set a maximum threshold for velocity?
 	}
+}
+
+//Rule 1: Boids try to fly towards the centre of mass of neighbouring boids.
+FVector AFishGroup::Rule_1_Cohesion(AFish* Fish)
+{
+	//Main idea: find the center (average of positions) of nearby boids and move towards it
+	FVector center(0);
+	//Position of current boid
+	FVector curr_pos = Fish->GetActorLocation();
+	//Count of nearby boids, used to calculate average
+	int count = 0;
+	//Iterate all boids, for those close ones, add to the center
+	for (AFish* i : Fishes)
+	{
+		//Check if near
+		if (FVector::Dist(i->GetActorLocation(), curr_pos) < rule_1_dist)
+		{
+			count ++;
+			center += i->GetActorLocation();
+		}
+	}
+	//Average the result
+	center /= count;
+	return center - curr_pos;
+}
+
+//Rule 2: Boids try to keep a small distance away from other objects (including other boids).
+FVector AFishGroup::Rule_2_Seperation(AFish* Fish)
+{
+	//Main idea: move away from near-collision boids
+	FVector v(0);
+	//Position of current boid
+	FVector curr_pos = Fish->GetActorLocation();
+	//Iterate all boids, add a counter velocity to stay away from those close ones
+	for (AFish* i : Fishes)
+	{
+		//Check if near
+		if (FVector::Dist(i->GetActorLocation(), curr_pos) < rule_2_dist)
+		{
+			v -= (i->GetActorLocation() - curr_pos);
+		}
+	}
+	return v;
+}
+
+//Rule 3: Boids try to match velocity with near boids.
+FVector AFishGroup::Rule_3_Alignment(AFish* Fish)
+{
+	//Main idea: move towards the same direction (average the velocity) as the nearby boids (fish flock phenomenon)
+	FVector v(0);
+	//Position of current boid
+	FVector curr_pos = Fish->GetActorLocation();
+	//Count of nearby boids, used to calculate average
+	int count = 0;
+	//Iterate all boids, for those close ones, add to v
+	for (AFish* i : Fishes)
+	{
+		//Check if near
+		if (FVector::Dist(i->GetActorLocation(), curr_pos) < rule_3_dist)
+		{
+			count++;
+			v += i->Velocity;
+		}
+	}
+	//Average the result
+	v /= count;
+	return v;
 }
 
