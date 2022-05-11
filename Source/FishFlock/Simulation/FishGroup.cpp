@@ -4,6 +4,7 @@
 #include "FishGroup.h"
 #include "Fish.h"
 #include "Kismet/GameplayStatics.h"
+#include "Kismet/KismetMathLibrary.h"
 
 // Sets default values
 AFishGroup::AFishGroup()
@@ -57,8 +58,9 @@ void AFishGroup::Tick(float DeltaTime)
 	for(AFish* Fish : Fishes)
 	{
 		Fish->SetActorLocation(Fish->GetActorLocation() + DeltaTime * Fish->Velocity);
+		FRotator const RotTarget = UKismetMathLibrary::MakeRotFromX(Fish->Velocity);
+		Fish->SetActorRotation(UKismetMathLibrary::RInterpTo(Fish->GetActorRotation(), RotTarget, DeltaTime, 5.f));
 	}
-
 }
 
 void AFishGroup::InitFishPositions()
@@ -99,7 +101,7 @@ void AFishGroup::UpdateFishVelocities(float DeltaTime)
 		{
 			Fish->Velocity /= Fish->Velocity.Length() / max_speed;
 		}
-		UE_LOG(LogTemp, Warning, TEXT("fish vel is %s"), *Fish->Velocity.ToString());
+		//UE_LOG(LogTemp, Warning, TEXT("fish vel is %s"), *Fish->Velocity.ToString());
 	}
 }
 

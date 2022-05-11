@@ -45,6 +45,7 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Boid")
 	double rule_3_dist;
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Boid")
 	double max_speed;
 	
 	
