@@ -12,14 +12,16 @@ AFishGroup::AFishGroup()
 	PrimaryActorTick.bCanEverTick = true;
 	//set boids rule scales
 	//Cohesion
-	rule_1_scale = 1.0;
+	rule_1_scale = 0.1;
 	rule_1_dist = 999.0;
 	//Seperation
 	rule_2_scale = 1.0;
-	rule_2_dist = 999.0;
+	rule_2_dist = 20.0;
 	//Alignment
-	rule_3_scale = 1.0;
+	rule_3_scale = 0.125;
 	rule_3_dist = 999.0;
+	//maximum speed
+	max_speed = 50.0;
 }
 
 // Called when the game starts or when spawned
@@ -62,10 +64,13 @@ void AFishGroup::Tick(float DeltaTime)
 void AFishGroup::InitFishPositions()
 {
 	//TODO: initialize the fish position when the simulation begin, should not create overlap between fishes
+	FRandomStream rand;
+	rand.GenerateNewSeed();
 	for(AFish* Fish : Fishes)
-	{
+	{ 
 		//dummy placeholder: just set the location to its current location, which does nothing
-		Fish->SetActorLocation(Fish->GetActorLocation());
+		Fish->SetActorLocation(Fish->GetActorLocation() + rand.GetUnitVector() * 100.0);
+		Fish->Velocity = rand.GetUnitVector() * 10.0;
 	}
 }
 
@@ -75,7 +80,7 @@ void AFishGroup::UpdateFishVelocities(float DeltaTime)
 	for(AFish* Fish : Fishes)
 	{
 		//dummy placeholder: set the velocity to zero
-		Fish->Velocity = FVector::ZeroVector;
+		//Fish->Velocity = FVector::ZeroVector;
 
 		//Rule 1: Boids try to fly towards the centre of mass of neighbouring boids.
 		FVector rule1_vec = Rule_1_Cohesion(Fish);
@@ -89,8 +94,12 @@ void AFishGroup::UpdateFishVelocities(float DeltaTime)
 		
 		//Add to old velocity
 		Fish->Velocity += rule_1_scale * rule1_vec + rule_2_scale * rule2_vec + rule_3_scale * rule3_vec;
+		//Clamp to max speed
+		if (Fish->Velocity.Length() > max_speed)
+		{
+			Fish->Velocity /= Fish->Velocity.Length() / max_speed;
+		}
 		UE_LOG(LogTemp, Warning, TEXT("fish vel is %s"), *Fish->Velocity.ToString());
-		//Set a maximum threshold for velocity?
 	}
 }
 
