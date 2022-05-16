@@ -19,6 +19,9 @@ protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
 
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Components")
+	TObjectPtr<USkeletalMeshComponent> Mesh;
+	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Config")
 	TSubclassOf<class AFish> FishClass;
 
@@ -57,6 +60,7 @@ public:
 private:
 	void InitFishPositions();
 	void UpdateFishVelocities(float DeltaTime);
+	FName GetControllerStateName() const;
 	FVector Rule_1_Cohesion(AFish* Fish);
 	FVector Rule_2_Seperation(AFish* Fish);
 	FVector Rule_3_Alignment(AFish* Fish);

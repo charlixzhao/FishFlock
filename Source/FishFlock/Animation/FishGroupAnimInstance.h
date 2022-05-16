@@ -13,5 +13,10 @@ UCLASS()
 class FISHFLOCK_API UFishGroupAnimInstance : public UAnimInstance
 {
 	GENERATED_BODY()
+public:
+	virtual void NativeUpdateAnimation(float DeltaSeconds) override;
+	FName GetCurrentStateName() const;
+private:
+	void UpdateControllerState(float DeltaTime);
 	
 };

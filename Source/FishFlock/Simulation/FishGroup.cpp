@@ -5,12 +5,16 @@
 #include "Fish.h"
 #include "Kismet/GameplayStatics.h"
 #include "Kismet/KismetMathLibrary.h"
+#include "FishFlock/Animation/FishGroupAnimInstance.h"
 
 // Sets default values
 AFishGroup::AFishGroup()
 {
  	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
+	Mesh = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("Controller"));
+	if(!RootComponent) RootComponent = Mesh;
+	
 	//set boids rule scales
 	//Cohesion
 	rule_1_scale = 0.1;
@@ -103,6 +107,19 @@ void AFishGroup::UpdateFishVelocities(float DeltaTime)
 		}
 		//UE_LOG(LogTemp, Warning, TEXT("fish vel is %s"), *Fish->Velocity.ToString());
 	}
+}
+
+FName AFishGroup::GetControllerStateName() const
+{
+	if(Mesh)
+	{
+		UFishGroupAnimInstance const* AnimInstance = Cast<UFishGroupAnimInstance>(Mesh->GetAnimInstance());
+		if(AnimInstance)
+		{
+			return AnimInstance->GetCurrentStateName();
+		}
+	}
+	return NAME_None;
 }
 
 //Rule 1: Boids try to fly towards the centre of mass of neighbouring boids.
