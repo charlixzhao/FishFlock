@@ -37,6 +37,22 @@ protected:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Boid")
 	double rule_3_scale;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Boid")
+	double Vacuole_Scale;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Boid")
+	double Hourglass_Scale;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Boid")
+	double Foutain_Scale;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Boid")
+	double Flash_Scale;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Boid")
+	double Split_Scale;
+	
 	
 	//These defines how close the boids should be to be considered in the rules
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Boid")
@@ -50,6 +66,7 @@ protected:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Boid")
 	double max_speed;
+
 	
 	
 public:	
@@ -65,7 +82,25 @@ private:
 	FVector Rule_2_Seperation(AFish* Fish);
 	FVector Rule_3_Alignment(AFish* Fish);
 
+	//Find the center position of fish school
+	FVector Find_Centroid();
 
+	//Predator_Attack: Herd -> Vacuole
+	FVector Rule_Vacuole();
+
+	//Predator_Attack: Herd -> Hourglass
+	FVector Rule_Hourglass();
+
+	//Predator_Attack: School || Compact -> Fountain
+	FVector Rule_Fountain();
+
+	//Predator_Attack: School || Compact -> Flash
+	FVector Rule_Flash(AFish* Fish, AFish* Predator);
+
+	
+	FVector Rule_Split(AFish* Fish, AFish* Predator);
+
+	
 private:
 	TArray<class AFish*> Fishes;
 };

@@ -189,3 +189,34 @@ FVector AFishGroup::Rule_3_Alignment(AFish* Fish)
 	return v;
 }
 
+//Find the center position of fish school
+FVector AFishGroup::Find_Centroid()
+{
+	FVector Centroid_Pos(0);
+
+	int Count = 0;
+	for (AFish* Fish : Fishes)
+	{
+		Count ++;
+		Centroid_Pos += Fish->GetActorLocation();
+	}
+	//Average the result
+	Centroid_Pos /= Count;
+	return Centroid_Pos;
+}
+
+//Predator_Attack: Herd -> Vacuole
+FVector Rule_Vacuole()
+{
+	FVector v(0);
+
+	return v;
+}
+
+//Predator_Attack: School || Compact -> Flash
+FVector Rule_Flash(AFish* Prey, AFish* Predator)
+{
+	FVector v(0);
+
+	return v;
+}
