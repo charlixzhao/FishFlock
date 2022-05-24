@@ -15,6 +15,7 @@ public:
 	// Sets default values for this actor's properties
 	AFish();
 
+	
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
@@ -26,6 +27,9 @@ public:
 private:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Components", meta=(AllowPrivateAccess="true"))
 	TObjectPtr<USkeletalMeshComponent> Mesh;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Components", meta=(AllowPrivateAccess="true"))
+	TObjectPtr<USkeletalMeshComponent> ControllerMesh;
 	
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Components", meta=(AllowPrivateAccess="true"))
 	TObjectPtr<class UArrowComponent> Arrow;
@@ -36,8 +40,26 @@ private:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Locomotion", meta=(AllowPrivateAccess="true"))
 	FVector Velocity;
 
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Config", meta=(AllowPrivateAccess="true"))
+	float Fear;
 	
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Config", meta=(AllowPrivateAccess="true"))
+	float VisionDistance = 300.f;
+	
+
+private:
+	int32 Index = -1;
+	TObjectPtr<class AFishGroup> BelongingGroup;
+	
+	
+	bool bVision;
+	bool bCommunicationFactor;
+	float RippleForce;
+	float SkitterDistance;
+	
+	friend struct FFishCommunicationSystem;
 	friend class AFishGroup;
+	friend class UFishControllerAnimInstance;
 };
 
 

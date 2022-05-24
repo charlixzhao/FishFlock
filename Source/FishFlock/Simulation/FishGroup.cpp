@@ -3,17 +3,37 @@
 
 #include "FishGroup.h"
 #include "Fish.h"
+#include "GameFramework/Character.h"
 #include "Kismet/GameplayStatics.h"
 #include "Kismet/KismetMathLibrary.h"
-#include "FishFlock/Animation/FishGroupAnimInstance.h"
+
+
+void FFishCommunicationSystem::BroadCast()
+{
+	bool bAllReceived = true;
+	for(AFish const* Leader : Leaders)
+	{
+		for(AFish* Follower : FishGroup->NearestNeighbours[Leader])
+		{
+			if(!Received[Follower->Index])
+			{
+				bAllReceived = false;
+				Received[Follower->Index] = true;
+				Follower->bCommunicationFactor = CommunicationMessage == EFishCommunicationMessage::PredatorDetected;
+				Leaders.AddUnique(Follower);
+			}
+		}
+	}
+
+	bActive = !bAllReceived;
+	
+}
 
 // Sets default values
 AFishGroup::AFishGroup()
 {
  	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
-	Mesh = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("Controller"));
-	if(!RootComponent) RootComponent = Mesh;
 	
 	//set boids rule scales
 	//Cohesion
@@ -29,11 +49,63 @@ AFishGroup::AFishGroup()
 	max_speed = 50.0;
 }
 
+void AFishGroup::StartOrAddLeaderToCommunicationSession(AFish* Leader, EFishCommunicationMessage Message)
+{
+	if(FishCommunicationSystem.bActive && FishCommunicationSystem.CommunicationMessage == Message)
+	{
+		FishCommunicationSystem.Leaders.AddUnique(Leader);
+		FishCommunicationSystem.Received[Leader->Index] = true;
+	}
+	else
+	{
+		FishCommunicationSystem = FFishCommunicationSystem();
+		FishCommunicationSystem.Leaders.AddUnique(Leader);
+		FishCommunicationSystem.CommunicationMessage = Message;
+		FishCommunicationSystem.Received.SetNumZeroed(Fishes.Num());
+		FishCommunicationSystem.FishGroup = this;
+		FishCommunicationSystem.bActive = true;
+	}
+}
+
+TArray<TObjectPtr<AFish>> AFishGroup::GetNearestNeighboursByPercentage(AFish const* InFish, float Percentage)
+{
+	struct CompareKey
+	{
+		explicit CompareKey(AFish* F, float D)
+			:Distance(D), Fish(F) {;}
+		float Distance;
+		AFish* Fish;
+		bool operator < (CompareKey const& Other) const { return Distance < Other.Distance; }
+	};
+	TArray<CompareKey> CompareKeys;
+	for(AFish* Fish : Fishes)
+	{
+		CompareKeys.Add(CompareKey(Fish, FVector::Distance(Fish->GetActorLocation(), InFish->GetActorLocation())));
+	}
+	CompareKeys.Sort();
+	int32 const Count = FMath::Max(1, static_cast<int32>(Fishes.Num() * Percentage));
+	TArray<TObjectPtr<AFish>> Result;
+	for(int32 Idx = 0; Idx < Count; ++Idx)
+	{
+		Result.Add(CompareKeys[Idx].Fish);
+	}
+	return Result;
+}
+
+void AFishGroup::TickCommunicationSystem()
+{
+	if(FishCommunicationSystem.bActive)
+	{
+		FishCommunicationSystem.BroadCast();
+	}
+}
+
 // Called when the game starts or when spawned
 void AFishGroup::BeginPlay()
 {
 	Super::BeginPlay();
-
+	Predator = UGameplayStatics::GetPlayerCharacter(GetWorld(), 0);
+	
 	if(FishClass)
 	{
 		for(int32 Idx = 0; Idx < FishNum; Idx++)
@@ -41,7 +113,10 @@ void AFishGroup::BeginPlay()
 			AFish* Fish = GetWorld()->SpawnActor<AFish>(FishClass, GetActorLocation(), GetActorRotation());
 			if(Fish)
 			{
+				Fish->BelongingGroup = this;
+				Fish->Index = Idx;
 				Fishes.Add(Fish);
+				NearestNeighbours.Add(Fish, {});
 			}
 			else
 			{
@@ -50,6 +125,10 @@ void AFishGroup::BeginPlay()
 		}
 		
 		InitFishPositions();
+
+		FTimerDelegate CommunicationTimerDelegate;
+		CommunicationTimerDelegate.BindUObject(this, &AFishGroup::TickCommunicationSystem);
+		GetWorldTimerManager().SetTimer(CommunicationTimerHandle, CommunicationTimerDelegate, CommunicationInterval, true);
 	}
 	
 }
@@ -65,6 +144,8 @@ void AFishGroup::Tick(float DeltaTime)
 		FRotator const RotTarget = UKismetMathLibrary::MakeRotFromX(Fish->Velocity);
 		Fish->SetActorRotation(UKismetMathLibrary::RInterpTo(Fish->GetActorRotation(), RotTarget, DeltaTime, 5.f));
 	}
+
+	UpdateControlParameters(DeltaTime);
 }
 
 void AFishGroup::InitFishPositions()
@@ -92,7 +173,7 @@ void AFishGroup::UpdateFishVelocities(float DeltaTime)
 		FVector rule1_vec = Rule_1_Cohesion(Fish);
 
 		//Rule 2: Boids try to keep a small distance away from other objects (including other boids).
-		FVector rule2_vec = Rule_2_Seperation(Fish);
+		FVector rule2_vec = Rule_2_Separation(Fish);
 
 		//Rule 3: Boids try to match velocity with near boids.
 		FVector rule3_vec = Rule_3_Alignment(Fish);
@@ -109,30 +190,42 @@ void AFishGroup::UpdateFishVelocities(float DeltaTime)
 	}
 }
 
-FName AFishGroup::GetControllerStateName() const
+void AFishGroup::UpdateControlParameters(float DeltaTime)
 {
-	if(Mesh)
+	FVector LocationSum = FVector::ZeroVector;
+	for(const AFish* Fish : Fishes) LocationSum += Fish->GetActorLocation();
+	Centroid = LocationSum / Fishes.Num();
+	CentroidToPredatorDistance = FVector::Distance(Centroid, Predator->GetActorLocation());
+
+	float CommunicationSum = 0;
+	for(AFish const* Fish : Fishes) CommunicationSum += Fish->bCommunicationFactor ? 1.f : 0.f;
+	AverageInformationTransfer = CommunicationSum / Fishes.Num();
+
+	TArray<float> Distance;
+	for(AFish* Fish : Fishes)
 	{
-		UFishGroupAnimInstance const* AnimInstance = Cast<UFishGroupAnimInstance>(Mesh->GetAnimInstance());
-		if(AnimInstance)
+		NearestNeighbours.Add(Fish, GetNearestNeighboursByPercentage(Fish, 0.25f));
+		if(NearestNeighbours[Fish].Num() > 0)
 		{
-			return AnimInstance->GetCurrentStateName();
+			Distance.Add(FVector::Distance(Fish->GetActorLocation(), NearestNeighbours[Fish][0]->GetActorLocation()));
 		}
 	}
-	return NAME_None;
+	NearestNeighbourDistance = FMath::Min(Distance);
+	
 }
 
+
 //Rule 1: Boids try to fly towards the centre of mass of neighbouring boids.
-FVector AFishGroup::Rule_1_Cohesion(AFish* Fish)
+FVector AFishGroup::Rule_1_Cohesion(AFish const* Fish)
 {
 	//Main idea: find the center (average of positions) of nearby boids and move towards it
 	FVector center(0);
 	//Position of current boid
-	FVector curr_pos = Fish->GetActorLocation();
+	FVector const curr_pos = Fish->GetActorLocation();
 	//Count of nearby boids, used to calculate average
 	int count = 0;
 	//Iterate all boids, for those close ones, add to the center
-	for (AFish* i : Fishes)
+	for (const AFish* i : Fishes)
 	{
 		//Check if near
 		if (FVector::Dist(i->GetActorLocation(), curr_pos) < rule_1_dist)
@@ -147,14 +240,14 @@ FVector AFishGroup::Rule_1_Cohesion(AFish* Fish)
 }
 
 //Rule 2: Boids try to keep a small distance away from other objects (including other boids).
-FVector AFishGroup::Rule_2_Seperation(AFish* Fish)
+FVector AFishGroup::Rule_2_Separation(AFish const* Fish)
 {
 	//Main idea: move away from near-collision boids
 	FVector v(0);
 	//Position of current boid
-	FVector curr_pos = Fish->GetActorLocation();
+	FVector const curr_pos = Fish->GetActorLocation();
 	//Iterate all boids, add a counter velocity to stay away from those close ones
-	for (AFish* i : Fishes)
+	for (const AFish* i : Fishes)
 	{
 		//Check if near
 		if (FVector::Dist(i->GetActorLocation(), curr_pos) < rule_2_dist)
@@ -166,16 +259,16 @@ FVector AFishGroup::Rule_2_Seperation(AFish* Fish)
 }
 
 //Rule 3: Boids try to match velocity with near boids.
-FVector AFishGroup::Rule_3_Alignment(AFish* Fish)
+FVector AFishGroup::Rule_3_Alignment(AFish const* Fish)
 {
 	//Main idea: move towards the same direction (average the velocity) as the nearby boids (fish flock phenomenon)
 	FVector v(0);
 	//Position of current boid
-	FVector curr_pos = Fish->GetActorLocation();
+	FVector const curr_pos = Fish->GetActorLocation();
 	//Count of nearby boids, used to calculate average
 	int count = 0;
 	//Iterate all boids, for those close ones, add to v
-	for (AFish* i : Fishes)
+	for (const AFish* i : Fishes)
 	{
 		//Check if near
 		if (FVector::Dist(i->GetActorLocation(), curr_pos) < rule_3_dist)

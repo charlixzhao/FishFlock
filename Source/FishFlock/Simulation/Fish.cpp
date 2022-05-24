@@ -3,8 +3,11 @@
 
 #include "Fish.h"
 
+#include "FishGroup.h"
 #include "Components/ArrowComponent.h"
 #include "Components/SphereComponent.h"
+#include "GameFramework/Character.h"
+#include "Kismet/KismetMathLibrary.h"
 
 // Sets default values
 AFish::AFish()
@@ -17,6 +20,9 @@ AFish::AFish()
 	
 	Mesh = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("Mesh"));
 	Mesh->SetupAttachment(RootComponent);
+	
+	ControllerMesh = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("ControllerMesh"));
+	ControllerMesh->SetupAttachment(RootComponent);
 	
 	Arrow = CreateDefaultSubobject<UArrowComponent>(TEXT("ForwardDirection"));
 	Arrow->SetupAttachment(RootComponent);
@@ -34,5 +40,15 @@ void AFish::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
+	FVector const FishForward = UKismetMathLibrary::GetForwardVector(GetActorRotation());
+	FVector const DirectionToPredator = (BelongingGroup->Predator->GetActorLocation() - GetActorLocation()).GetSafeNormal();
+	float const Angle = FMath::RadiansToDegrees(FMath::Acos(FishForward.Dot(DirectionToPredator)));
+	bool const NewVision = Angle <= 150.f && FVector::Distance(GetActorLocation(), BelongingGroup->Predator->GetActorLocation()) < VisionDistance;
+	if(NewVision != bVision)
+	{
+		BelongingGroup->StartOrAddLeaderToCommunicationSession(this,
+			NewVision ? EFishCommunicationMessage::PredatorDetected : EFishCommunicationMessage::PredatorLeave);
+	}
+	bVision = NewVision;
 }
 
