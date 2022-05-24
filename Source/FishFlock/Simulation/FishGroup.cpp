@@ -282,3 +282,80 @@ FVector AFishGroup::Rule_3_Alignment(AFish const* Fish)
 	return v;
 }
 
+
+void AFishGroup::UpdateFishVelocities_Ball(float DeltaTime)
+{
+	// Ball Maneuver Rule Scales
+	double ball_1_scale = 0.5;
+	double ball_2_scale = 1.0;
+	double ball_3_scale = 0.1;
+	double ball_dist = 100.0;
+	for (AFish* Fish : Fishes)
+	{
+		//dummy placeholder: set the velocity to zero
+		//Fish->Velocity = FVector::ZeroVector;
+
+		//Rule 1: Boids try to fly towards the centre of mass of neighbouring boids.
+		FVector center = Ball_Get_Center(Fish);
+		FVector rule1_vec = FVector::Dist(center, Fish->GetActorLocation()) > ball_dist ? center - Fish->GetActorLocation() : Fish->GetActorLocation() - center;
+		rule1_vec.Normalize();
+
+		//Rule 2: Boids try to keep a small distance away from other objects (including other boids).
+		FVector rule2_vec = Rule_2_Separation(Fish);
+
+		//Rule 3: Boids try to match velocity with near boids.
+		FVector rotate_vec = Ball_Rotate_Arround(Fish, center);
+
+
+		//Add to old velocity
+		Fish->Velocity += ball_1_scale * rule1_vec + ball_2_scale * rule2_vec + ball_3_scale * rotate_vec;
+		//Clamp to max speed
+		if (Fish->Velocity.Length() > max_speed)
+		{
+			Fish->Velocity /= Fish->Velocity.Length() / max_speed;
+		}
+		//UE_LOG(LogTemp, Warning, TEXT("fish vel is %s"), *Fish->Velocity.ToString());
+	}
+}
+
+FVector AFishGroup::Ball_Get_Center(AFish const* Fish)
+{
+	//Main idea: find the center (average of positions) of nearby boids and move towards it
+	FVector center(0);
+	//Position of current boid
+	FVector const curr_pos = Fish->GetActorLocation();
+	//Count of nearby boids, used to calculate average
+	int count = 0;
+	//Iterate all boids, for those close ones, add to the center
+	for (const AFish* i : Fishes)
+	{
+		//Check if near
+		if (FVector::Dist(i->GetActorLocation(), curr_pos) < rule_1_dist)
+		{
+			count++;
+			center += i->GetActorLocation();
+		}
+	}
+	//Average the result
+	center /= count;
+	return center;
+}
+
+FVector AFishGroup::Ball_Rotate_Arround(AFish const* Fish, FVector& center)
+{
+	//speed parameters
+	double delta_theta = 0.1;
+	double delta_phi = 0.01;
+	FVector v(0);
+	FVector const curr_pos = Fish->GetActorLocation();
+	double radius = FVector::Dist(center, curr_pos);
+	FVector curr_pos_translated = (curr_pos - center);
+	curr_pos_translated.Normalize();
+	//To polar coordinate
+	double theta = atan2(curr_pos_translated.Y, curr_pos_translated.X);
+	double phi = acos(curr_pos_translated.Z);
+	v.X = radius * cos(theta + delta_theta) * sin(phi + delta_phi) - radius * cos(theta) * sin(phi);
+	v.Y = radius * sin(theta + delta_theta) * sin(phi + delta_phi) - radius * sin(theta) * sin(phi);
+	v.Z = radius * cos(phi + delta_phi) - radius * cos(phi);
+	return v;
+}

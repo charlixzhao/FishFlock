@@ -98,6 +98,13 @@ private:
 	FVector Rule_3_Alignment(AFish const* Fish);
 	TArray<TObjectPtr<AFish>> GetNearestNeighboursByPercentage(AFish const* Fish, float Percentage);
 	void TickCommunicationSystem();
+
+	//Ball
+	void UpdateFishVelocities_Ball(float DeltaTime);
+	//Ball
+	FVector Ball_Get_Center(AFish const* Fish);
+	FVector Ball_Rotate_Arround(AFish const* Fish, FVector& center);
+
 	
 private:
 	TArray<TObjectPtr<AFish>> Fishes;
