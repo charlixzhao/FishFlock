@@ -37,6 +37,8 @@ void UFishControllerAnimInstance::UpdateControllerState(float DeltaTime)
 		if(SkitterTime >= 0.f) SkitterTime += DeltaTime;
 		if(HerdTime >= 0.f) HerdTime += DeltaTime;
 		if(ChaseTime >= 0.f) ChaseTime += DeltaTime;
+		if(FlashInTime >= 0.f) FlashInTime += DeltaTime;
+		if(FlashOutTime >= 0.f) FlashOutTime += DeltaTime;
 		UpdatePredatorState();
 	}
 	

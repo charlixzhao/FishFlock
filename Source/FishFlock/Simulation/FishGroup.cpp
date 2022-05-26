@@ -195,7 +195,9 @@ void AFishGroup::UpdateFishVelocities(float DeltaTime)
 	if(CurrentStateName == "Wander") UpdateFishVelocities_Wander(DeltaTime);
 	else if (CurrentStateName == "Compact") UpdateFishVelocities_Wander(DeltaTime);
 	else if (CurrentStateName == "Ball") UpdateFishVelocities_Ball(DeltaTime);
-	else if(CurrentStateName == "Herd") UpdateFishVelocities_Herd(DeltaTime);
+	else if (CurrentStateName == "Herd") UpdateFishVelocities_Herd(DeltaTime);
+	else if (CurrentStateName == "FlashOut") UpdateFishVelocities_FlashOutward(DeltaTime);
+	else if (CurrentStateName == "FlashIn") UpdateFishVelocities_FlashInward(DeltaTime);
 }
 
 void AFishGroup::UpdateControlParameters(float DeltaTime)
@@ -366,4 +368,26 @@ FVector AFishGroup::Ball_Rotate_Around(AFish const* Fish, const FVector& center)
 	v.Y = radius * sin(theta + delta_theta) * sin(phi + delta_phi) - radius * sin(theta) * sin(phi);
 	v.Z = radius * cos(phi + delta_phi) - radius * cos(phi);
 	return v;
+}
+
+void AFishGroup::UpdateFishVelocities_FlashOutward(float DeltaTime)
+{
+	if(Predator)
+	{
+		for(AFish* Fish : Fishes)
+		{
+			Fish->Velocity = (Predator->GetActorLocation() - Fish->GetActorLocation()).GetSafeNormal() * max_speed_current;
+		}
+	}
+}
+
+void AFishGroup::UpdateFishVelocities_FlashInward(float DeltaTime)
+{
+	if(Predator)
+	{
+		for(AFish* Fish : Fishes)
+		{
+			Fish->Velocity = (Fish->GetActorLocation() - Predator->GetActorLocation()).GetSafeNormal() * max_speed_current;
+		}
+	}
 }

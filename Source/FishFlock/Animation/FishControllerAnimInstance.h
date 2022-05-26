@@ -55,7 +55,9 @@ protected:
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Threshold")
 	float SkitterTime_Threshold = 5.f;
-	
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Threshold")
+	float FlashTime_Threshold = 1.f;
 protected:
 	UPROPERTY(BlueprintReadOnly, Category="Transition")
 	float CentroidToPredatorDistance;
@@ -80,8 +82,13 @@ protected:
 
 	UPROPERTY(BlueprintReadWrite, Category="Transition")
 	float HerdTime = -1.f;
+	
+	UPROPERTY(BlueprintReadWrite, Category="Transition")
+	float FlashOutTime = -1.f;
 
-
+	UPROPERTY(BlueprintReadWrite, Category="Transition")
+	float FlashInTime = -1.f;
+	
 private:
 	void UpdatePredatorState();
 private:
