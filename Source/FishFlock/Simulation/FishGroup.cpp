@@ -5,6 +5,7 @@
 #include "Fish.h"
 #include "Animation/FishControllerAnimInstance.h"
 #include "Components/SphereComponent.h"
+#include "Components/SplineComponent.h"
 #include "GameFramework/Character.h"
 #include "Kismet/GameplayStatics.h"
 #include "Kismet/KismetMathLibrary.h"
@@ -30,8 +31,14 @@ AFishGroup::AFishGroup()
 	//maximum speed
 	max_speed_current = 50.0;
 
+	SceneRoot = CreateDefaultSubobject<USceneComponent>(TEXT("SceneRoot"));
+	if(!RootComponent) RootComponent = SceneRoot;
+	
 	ControllerMesh = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("ControllerMesh"));
-	if(!RootComponent) RootComponent = ControllerMesh;
+	ControllerMesh->SetupAttachment(RootComponent);
+
+	TravelSpline = CreateDefaultSubobject<USplineComponent>(TEXT("TravelSpline"));
+	TravelSpline->SetupAttachment(RootComponent);
 }
 
 bool AFishGroup::DoesAnyFishVision() const
@@ -70,12 +77,15 @@ TArray<TObjectPtr<AFish>> AFishGroup::GetNearestNeighboursByPercentage(AFish con
 
 void AFishGroup::UpdateFishVelocities_Wander(float DeltaTime)
 {
-	
-	for(AFish* Fish : Fishes)
-	{
-		//dummy placeholder: set the velocity to zero
-		//Fish->Velocity = FVector::ZeroVector;
+	CumulativeWanderDistance += max_speed_current * DeltaTime;
+	CumulativeWanderDistance = FMath::Fmod(CumulativeWanderDistance, 	TravelSpline->GetSplineLength());
+	const FVector LeaderLocation = TravelSpline->GetWorldLocationAtDistanceAlongSpline(CumulativeWanderDistance);
+	Fishes[0]->Velocity = (LeaderLocation - Fishes[0]->GetActorLocation())/DeltaTime;
 
+	for(int32 Idx = 1; Idx < Fishes.Num(); ++Idx)
+	{
+		AFish* Fish = Fishes[Idx];
+		
 		//Rule 1: Boids try to fly towards the centre of mass of neighbouring boids.
 		FVector rule1_vec = Rule_1_Cohesion(Fish);
 
@@ -85,7 +95,6 @@ void AFishGroup::UpdateFishVelocities_Wander(float DeltaTime)
 		//Rule 3: Boids try to match velocity with near boids.
 		FVector rule3_vec = Rule_3_Alignment(Fish);
 		
-		
 		//Add to old velocity
 		Fish->Velocity += rule_1_scale * rule1_vec + rule_2_scale * rule2_vec + rule_3_scale * rule3_vec;
 		//Clamp to max speed
@@ -93,7 +102,6 @@ void AFishGroup::UpdateFishVelocities_Wander(float DeltaTime)
 		{
 			Fish->Velocity /= Fish->Velocity.Length() / max_speed_current;
 		}
-		//UE_LOG(LogTemp, Warning, TEXT("fish vel is %s"), *Fish->Velocity.ToString());
 	}
 	
 }
@@ -167,13 +175,14 @@ void AFishGroup::Tick(float DeltaTime)
 
 void AFishGroup::InitFishPositions()
 {
-	//TODO: initialize the fish position when the simulation begin, should not create overlap between fishes
+	const FVector SplineOrigin = TravelSpline->GetLocationAtTime(0.f, ESplineCoordinateSpace::World);
+	Fishes[0]->SetActorLocation(SplineOrigin);
 	FRandomStream rand;
 	rand.GenerateNewSeed();
-	for(AFish* Fish : Fishes)
-	{ 
-		//dummy placeholder: just set the location to its current location, which does nothing
-		Fish->SetActorLocation(Fish->GetActorLocation() + rand.GetUnitVector() * 300.0);
+	for(int32 Idx = 1; Idx < Fishes.Num(); ++Idx)
+	{
+		AFish* Fish = Fishes[Idx];
+		Fish->SetActorLocation(SplineOrigin + rand.GetUnitVector() * 300.0);
 		Fish->Velocity = rand.GetUnitVector() * 10.0;
 	}
 }
@@ -242,7 +251,7 @@ FVector AFishGroup::Rule_1_Cohesion(AFish const* Fish)
 //Rule 2: Boids try to keep a small distance away from other objects (including other boids).
 FVector AFishGroup::Rule_2_Separation(AFish const* Fish)
 {
-	rule_2_dist = Fish->SphereCollider->GetScaledSphereRadius()*4.f;
+	//rule_2_dist = Fish->SphereCollider->GetScaledSphereRadius()*4.f;
 	//Main idea: move away from near-collision boids
 	FVector v(0);
 	//Position of current boid
