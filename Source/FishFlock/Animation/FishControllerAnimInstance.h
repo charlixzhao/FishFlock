@@ -21,48 +21,70 @@ public:
 	UFUNCTION(BlueprintCallable)
 	void UpdateControllerState(float DeltaTime);
 
+	UFUNCTION(BlueprintCallable)
+	void EnterFastAvoid();
+
+	
+	UFUNCTION(BlueprintCallable)
+	void LeaveFastAvoid();
 
 protected:
 	UPROPERTY(EditDefaultsOnly, Category="Config")
 	FName StateMachineName;
 	
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Config")
-	float VisionDistance = 300.f;
-
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Threshold")
 	float HerdDistance_Threshold = 90.f;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Threshold")
-	float SkitterDistance_Threshold = 20.f;
+	float Force_Threshold = 5.f;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Threshold")
-	float Force_Threshold = 5.f;
-	
+	float Fear_Threshold = 5.f;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Threshold")
+	float BallDistance_Threshold = 200.f;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Threshold")
+	float AvoidDistance_Threshold = 100.f;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Threshold")
+	float ChaseTime_Threshold = 5.f;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Threshold")
+	float HerdTime_Threshold = 5.f;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Threshold")
+	float SkitterTime_Threshold = 5.f;
 	
 protected:
-	UPROPERTY(BlueprintReadOnly, Category="Predator")
+	UPROPERTY(BlueprintReadOnly, Category="Transition")
 	float CentroidToPredatorDistance;
 
-	UPROPERTY(BlueprintReadOnly, Category="Predator")
+	UPROPERTY(BlueprintReadOnly, Category="Transition")
 	EPredatorState PredatorState;
 
-	UPROPERTY(BlueprintReadOnly, Category="Vision")
+	UPROPERTY(BlueprintReadOnly, Category="Transition")
 	bool bVision;
-	
-	//UPROPERTY(BlueprintReadOnly, Category="Lateral")
-	//float NearestNeighbourDistance;
 		
-	UPROPERTY(BlueprintReadOnly, Category="Lateral")
+	UPROPERTY(BlueprintReadOnly, Category="Transition")
 	float RippleForce;
 	
 	UPROPERTY(BlueprintReadOnly, Category="Transition")
 	float Fear;
 	
+	UPROPERTY(BlueprintReadWrite, Category="Transition")
+	float SkitterTime = -1.f;
+	
 	UPROPERTY(BlueprintReadOnly, Category="Transition")
-	float SkitterDistance;
+	float ChaseTime = -1.f;
+
+	UPROPERTY(BlueprintReadWrite, Category="Transition")
+	float HerdTime = -1.f;
+
 
 private:
-
-	TObjectPtr<class AFish> Fish;
+	void UpdatePredatorState();
+private:
+	TObjectPtr<class AFishGroup> FishGroup;
 	
 };

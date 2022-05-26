@@ -3,6 +3,7 @@
 
 #include "FishGroup.h"
 #include "Fish.h"
+#include "Animation/FishControllerAnimInstance.h"
 #include "Components/SphereComponent.h"
 #include "GameFramework/Character.h"
 #include "Kismet/GameplayStatics.h"
@@ -27,10 +28,19 @@ AFishGroup::AFishGroup()
 	rule_3_scale = 0.125;
 	rule_3_dist = 999.0;
 	//maximum speed
-	max_speed = 50.0;
+	max_speed_current = 50.0;
 
 	ControllerMesh = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("ControllerMesh"));
 	if(!RootComponent) RootComponent = ControllerMesh;
+}
+
+bool AFishGroup::DoesAnyFishVision() const
+{
+	for(const AFish* Fish : Fishes)
+	{
+		if(Fish->bVision) return true;
+	}
+	return false;
 }
 
 TArray<TObjectPtr<AFish>> AFishGroup::GetNearestNeighboursByPercentage(AFish const* InFish, float Percentage)
@@ -58,6 +68,36 @@ TArray<TObjectPtr<AFish>> AFishGroup::GetNearestNeighboursByPercentage(AFish con
 	return Result;
 }
 
+void AFishGroup::UpdateFishVelocities_Wander(float DeltaTime)
+{
+	
+	for(AFish* Fish : Fishes)
+	{
+		//dummy placeholder: set the velocity to zero
+		//Fish->Velocity = FVector::ZeroVector;
+
+		//Rule 1: Boids try to fly towards the centre of mass of neighbouring boids.
+		FVector rule1_vec = Rule_1_Cohesion(Fish);
+
+		//Rule 2: Boids try to keep a small distance away from other objects (including other boids).
+		FVector rule2_vec = Rule_2_Separation(Fish);
+
+		//Rule 3: Boids try to match velocity with near boids.
+		FVector rule3_vec = Rule_3_Alignment(Fish);
+		
+		
+		//Add to old velocity
+		Fish->Velocity += rule_1_scale * rule1_vec + rule_2_scale * rule2_vec + rule_3_scale * rule3_vec;
+		//Clamp to max speed
+		if (Fish->Velocity.Length() > max_speed_current)
+		{
+			Fish->Velocity /= Fish->Velocity.Length() / max_speed_current;
+		}
+		//UE_LOG(LogTemp, Warning, TEXT("fish vel is %s"), *Fish->Velocity.ToString());
+	}
+	
+}
+
 
 void AFishGroup::UpdateFishVelocities_Herd(float DeltaTime)
 {
@@ -65,15 +105,26 @@ void AFishGroup::UpdateFishVelocities_Herd(float DeltaTime)
 	{
 		for(AFish* Fish : Fishes)
 		{
-			Fish->Velocity = (Fish->GetActorLocation() - Predator->GetActorLocation()).GetSafeNormal() * max_speed;
+			Fish->Velocity = (Fish->GetActorLocation() - Predator->GetActorLocation()).GetSafeNormal() * max_speed_current;
 		}
 	}
+}
+
+void AFishGroup::EnterFastAvoid()
+{
+	max_speed_current = max_speed_fast_avoid;
+}
+
+void AFishGroup::LeaveFastAvoid()
+{
+	max_speed_current = max_speed_normal;
 }
 
 // Called when the game starts or when spawned
 void AFishGroup::BeginPlay()
 {
 	Super::BeginPlay();
+	max_speed_current = max_speed_normal;
 	Predator = UGameplayStatics::GetPlayerCharacter(GetWorld(), 0);
 	
 	if(FishClass)
@@ -122,7 +173,7 @@ void AFishGroup::InitFishPositions()
 	for(AFish* Fish : Fishes)
 	{ 
 		//dummy placeholder: just set the location to its current location, which does nothing
-		Fish->SetActorLocation(Fish->GetActorLocation() + rand.GetUnitVector() * 100.0);
+		Fish->SetActorLocation(Fish->GetActorLocation() + rand.GetUnitVector() * 300.0);
 		Fish->Velocity = rand.GetUnitVector() * 10.0;
 	}
 }
@@ -130,35 +181,12 @@ void AFishGroup::InitFishPositions()
 void AFishGroup::UpdateFishVelocities(float DeltaTime)
 {
 	//TODO: update the fish velocity (expressed in world frame)
-
-	//UpdateFishVelocities_Herd(DeltaTime);
-	UpdateFishVelocities_Ball(DeltaTime);
-	/*
-	for(AFish* Fish : Fishes)
-	{
-		//dummy placeholder: set the velocity to zero
-		//Fish->Velocity = FVector::ZeroVector;
-
-		//Rule 1: Boids try to fly towards the centre of mass of neighbouring boids.
-		FVector rule1_vec = Rule_1_Cohesion(Fish);
-
-		//Rule 2: Boids try to keep a small distance away from other objects (including other boids).
-		FVector rule2_vec = Rule_2_Separation(Fish);
-
-		//Rule 3: Boids try to match velocity with near boids.
-		FVector rule3_vec = Rule_3_Alignment(Fish);
-		
-		
-		//Add to old velocity
-		Fish->Velocity += rule_1_scale * rule1_vec + rule_2_scale * rule2_vec + rule_3_scale * rule3_vec;
-		//Clamp to max speed
-		if (Fish->Velocity.Length() > max_speed)
-		{
-			Fish->Velocity /= Fish->Velocity.Length() / max_speed;
-		}
-		//UE_LOG(LogTemp, Warning, TEXT("fish vel is %s"), *Fish->Velocity.ToString());
-	}
-	*/
+	FName const CurrentStateName = Cast<UFishControllerAnimInstance>(ControllerMesh->GetAnimInstance())->GetCurrentStateName();
+	GEngine->AddOnScreenDebugMessage(1, 2.f, FColor::Yellow, CurrentStateName.ToString());
+	if(CurrentStateName == "Wander") UpdateFishVelocities_Wander(DeltaTime);
+	else if (CurrentStateName == "Compact") UpdateFishVelocities_Wander(DeltaTime);
+	else if (CurrentStateName == "Ball") UpdateFishVelocities_Ball(DeltaTime);
+	else if(CurrentStateName == "Herd") UpdateFishVelocities_Herd(DeltaTime);
 }
 
 void AFishGroup::UpdateControlParameters(float DeltaTime)
@@ -212,7 +240,7 @@ FVector AFishGroup::Rule_1_Cohesion(AFish const* Fish)
 //Rule 2: Boids try to keep a small distance away from other objects (including other boids).
 FVector AFishGroup::Rule_2_Separation(AFish const* Fish)
 {
-	rule_2_dist = Fish->SphereCollider->GetScaledSphereRadius()*2.f;
+	rule_2_dist = Fish->SphereCollider->GetScaledSphereRadius()*4.f;
 	//Main idea: move away from near-collision boids
 	FVector v(0);
 	//Position of current boid
@@ -257,10 +285,10 @@ FVector AFishGroup::Rule_3_Alignment(AFish const* Fish)
 void AFishGroup::UpdateFishVelocities_Ball(float DeltaTime)
 {
 	// Ball Maneuver Rule Scales
-	double ball_1_scale = 0.5;
-	double ball_2_scale = 1.0;
-	double ball_3_scale = 0.1;
-	double ball_dist = 100.0;
+	const double ball_1_scale = 0.5;
+	const double ball_2_scale = 1.0;
+	const double ball_3_scale = 0.1;
+	const double ball_dist = 100.0;
 	for (AFish* Fish : Fishes)
 	{
 		//dummy placeholder: set the velocity to zero
@@ -275,15 +303,15 @@ void AFishGroup::UpdateFishVelocities_Ball(float DeltaTime)
 		FVector rule2_vec = Rule_2_Separation(Fish);
 
 		//Rule 3: Boids try to match velocity with near boids.
-		FVector rotate_vec = Ball_Rotate_Arround(Fish, center);
+		FVector rotate_vec = Ball_Rotate_Around(Fish, center);
 
 
 		//Add to old velocity
 		Fish->Velocity += ball_1_scale * rule1_vec + ball_2_scale * rule2_vec + ball_3_scale * rotate_vec;
 		//Clamp to max speed
-		if (Fish->Velocity.Length() > max_speed)
+		if (Fish->Velocity.Length() > max_speed_current)
 		{
-			Fish->Velocity /= Fish->Velocity.Length() / max_speed;
+			Fish->Velocity /= Fish->Velocity.Length() / max_speed_current;
 		}
 		//UE_LOG(LogTemp, Warning, TEXT("fish vel is %s"), *Fish->Velocity.ToString());
 	}
@@ -312,19 +340,19 @@ FVector AFishGroup::Ball_Get_Center(AFish const* Fish)
 	return center;
 }
 
-FVector AFishGroup::Ball_Rotate_Arround(AFish const* Fish, FVector& center)
+FVector AFishGroup::Ball_Rotate_Around(AFish const* Fish, const FVector& center)
 {
 	//speed parameters
-	double delta_theta = 0.1;
-	double delta_phi = 0.01;
+	const double delta_theta = 0.1;
+	const double delta_phi = 0.01;
 	FVector v(0);
 	FVector const curr_pos = Fish->GetActorLocation();
-	double radius = FVector::Dist(center, curr_pos);
+	const double radius = FVector::Dist(center, curr_pos);
 	FVector curr_pos_translated = (curr_pos - center);
 	curr_pos_translated.Normalize();
 	//To polar coordinate
-	double theta = atan2(curr_pos_translated.Y, curr_pos_translated.X);
-	double phi = acos(curr_pos_translated.Z);
+	const double theta = atan2(curr_pos_translated.Y, curr_pos_translated.X);
+	const double phi = acos(curr_pos_translated.Z);
 	v.X = radius * cos(theta + delta_theta) * sin(phi + delta_phi) - radius * cos(theta) * sin(phi);
 	v.Y = radius * sin(theta + delta_theta) * sin(phi + delta_phi) - radius * sin(theta) * sin(phi);
 	v.Z = radius * cos(phi + delta_phi) - radius * cos(phi);

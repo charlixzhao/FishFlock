@@ -20,13 +20,22 @@ class FISHFLOCK_API AFishGroup : public AActor
 public:	
 	// Sets default values for this actor's properties
 	AFishGroup();
-	
+
+	bool DoesAnyFishVision() const;
 	TObjectPtr<ACharacter> Predator;
 	FVector Centroid;
 	EPredatorState PredatorState;
 	float CentroidToPredatorDistance;
+	float RippleForce;
+	
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Config", meta=(AllowPrivateAccess="true"))
+	float Fear;
 	//float NearestNeighbourDistance;
 	TMap<TObjectPtr<AFish>, TArray<TObjectPtr<AFish>>> NearestNeighbours;
+
+	void EnterFastAvoid();
+	
+	void LeaveFastAvoid();
 	
 protected:
 	// Called when the game starts or when spawned
@@ -62,9 +71,12 @@ protected:
 	double rule_3_dist;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Boid")
-	double max_speed;
-	
-	
+	double max_speed_normal = 50.f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Boid")
+	double max_speed_fast_avoid = 100.f;
+
+	double max_speed_current;
 public:	
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
@@ -79,6 +91,7 @@ private:
 	FVector Rule_3_Alignment(AFish const* Fish);
 	TArray<TObjectPtr<AFish>> GetNearestNeighboursByPercentage(AFish const* Fish, float Percentage);
 
+	void UpdateFishVelocities_Wander(float DeltaTime);
 	//Herd
 	void UpdateFishVelocities_Herd(float DeltaTime);
 	
@@ -86,7 +99,7 @@ private:
 	void UpdateFishVelocities_Ball(float DeltaTime);
 	//Ball
 	FVector Ball_Get_Center(AFish const* Fish);
-	FVector Ball_Rotate_Arround(AFish const* Fish, FVector& center);
+	FVector Ball_Rotate_Around(AFish const* Fish, const FVector& center);
 
 	
 private:

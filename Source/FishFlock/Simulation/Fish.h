@@ -36,9 +36,7 @@ private:
 	
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Locomotion", meta=(AllowPrivateAccess="true"))
 	FVector Velocity;
-
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Config", meta=(AllowPrivateAccess="true"))
-	float Fear;
+	
 	
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Config", meta=(AllowPrivateAccess="true"))
 	float VisionDistance = 300.f;
@@ -47,11 +45,7 @@ private:
 private:
 	int32 Index = -1;
 	TObjectPtr<class AFishGroup> BelongingGroup;
-	
-	
 	bool bVision;
-	float RippleForce;
-	float SkitterDistance;
 	
 	friend struct FFishCommunicationSystem;
 	friend class AFishGroup;

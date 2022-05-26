@@ -4,7 +4,6 @@
 #include "FishControllerAnimInstance.h"
 
 #include "Animation/AnimNode_StateMachine.h"
-#include "FishFlock/Simulation/Fish.h"
 #include "Simulation/PredatorCharacter.h"
 #include "Simulation/FishGroup.h"
 #include "Kismet/KismetMathLibrary.h"
@@ -13,7 +12,7 @@
 void UFishControllerAnimInstance::NativeInitializeAnimation()
 {
 	Super::NativeInitializeAnimation();
-	Fish = Cast<AFish>(GetOwningActor());
+	FishGroup = Cast<AFishGroup>(GetOwningActor());
 }
 
 
@@ -24,26 +23,47 @@ FName UFishControllerAnimInstance::GetCurrentStateName() const
 
 void UFishControllerAnimInstance::UpdateControllerState(float DeltaTime)
 {
-	if(!Fish)
+	if(!FishGroup)
 	{
-		Fish = Cast<AFish>(GetOwningActor());
+		FishGroup = Cast<AFishGroup>(GetOwningActor());
 	}
 	
-	if(Fish && Fish->BelongingGroup)
+	if(FishGroup)
 	{
-		CentroidToPredatorDistance = Fish->BelongingGroup->CentroidToPredatorDistance;
-		bVision = Fish->bVision;
-		//NearestNeighbourDistance = Fish->BelongingGroup->NearestNeighbourDistance;
-		Fear = Fish->RippleForce;
+		CentroidToPredatorDistance = FishGroup->CentroidToPredatorDistance;
+		bVision = FishGroup->DoesAnyFishVision();
+		Fear = FishGroup->Fear;
+		RippleForce = FishGroup->RippleForce;
+		if(SkitterTime >= 0.f) SkitterTime += DeltaTime;
+		if(HerdTime >= 0.f) HerdTime += DeltaTime;
+		if(ChaseTime >= 0.f) ChaseTime += DeltaTime;
+		UpdatePredatorState();
+	}
+	
+}
 
-		//TODO: update ripple force, predator state, SkitterDistance
-		const APredatorCharacter* PredatorCharacter =
+void UFishControllerAnimInstance::EnterFastAvoid()
+{
+	if(FishGroup) FishGroup->EnterFastAvoid();
+}
+
+void UFishControllerAnimInstance::LeaveFastAvoid()
+{
+	if(FishGroup) FishGroup->LeaveFastAvoid();
+}
+
+void UFishControllerAnimInstance::UpdatePredatorState()
+{
+	const APredatorCharacter* PredatorCharacter =
 			Cast<APredatorCharacter>(UGameplayStatics::GetPlayerPawn(this, 0));
-		if(PredatorCharacter)
-		{
-			PredatorState = PredatorCharacter->PredatorState;
-		}
-		
+	if(PredatorCharacter)
+	{
+		const EPredatorState LastState = PredatorState;
+		PredatorState = EPredatorState::None;
+		if(bVision) PredatorState = EPredatorState::Presence;
+		if(bVision && PredatorCharacter->PredatorState == EPredatorState::Chase) PredatorState = EPredatorState::Chase;
+		if(bVision && PredatorCharacter->PredatorState == EPredatorState::Attack) PredatorState = EPredatorState::Attack;
+		if(LastState != EPredatorState::Chase && PredatorState == EPredatorState::Chase) ChaseTime = 0.f;
+		if(LastState == EPredatorState::Chase && PredatorState != EPredatorState::Chase) ChaseTime = -1.f;
 	}
-	
 }
