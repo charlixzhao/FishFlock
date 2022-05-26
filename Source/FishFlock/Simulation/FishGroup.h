@@ -101,6 +101,9 @@ private:
 	FVector Ball_Get_Center(AFish const* Fish);
 	FVector Ball_Rotate_Around(AFish const* Fish, const FVector& center);
 
+	//Predator_attack
+	void UpdateFishVelocities_FlashOutward(float DeltaTime);
+	void UpdateFishVelocities_FlashInward(float DeltaTime);
 	
 private:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Components", meta=(AllowPrivateAccess="true"))
