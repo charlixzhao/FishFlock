@@ -36,6 +36,8 @@ public:
 	void EnterFastAvoid();
 	
 	void LeaveFastAvoid();
+
+	
 	
 protected:
 	// Called when the game starts or when spawned
@@ -101,16 +103,22 @@ private:
 	FVector Ball_Get_Center(AFish const* Fish);
 	FVector Ball_Rotate_Around(AFish const* Fish, const FVector& center);
 
-	//Predator_attack
-	void UpdateFishVelocities_FlashOutward(float DeltaTime);
-	void UpdateFishVelocities_FlashInward(float DeltaTime);
 	
 private:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Components", meta=(AllowPrivateAccess="true"))
+	TObjectPtr<USceneComponent> SceneRoot;
+	
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Components", meta=(AllowPrivateAccess="true"))
 	TObjectPtr<USkeletalMeshComponent> ControllerMesh;
 
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Components", meta=(AllowPrivateAccess="true"))
+	TObjectPtr<class USplineComponent> TravelSpline;
+	
 	UPROPERTY(BlueprintReadOnly, meta=(AllowPrivateAccess="true"))
 	TArray<TObjectPtr<AFish>> Fishes;
+
+	float CumulativeWanderDistance = 0.f;
+	
 };
 
 
