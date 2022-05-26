@@ -5,9 +5,10 @@
 
 #include "Animation/AnimNode_StateMachine.h"
 #include "FishFlock/Simulation/Fish.h"
-#include "GameFramework/Character.h"
+#include "Simulation/PredatorCharacter.h"
 #include "Simulation/FishGroup.h"
 #include "Kismet/KismetMathLibrary.h"
+#include "Kismet/GameplayStatics.h"
 
 void UFishControllerAnimInstance::NativeInitializeAnimation()
 {
@@ -32,12 +33,17 @@ void UFishControllerAnimInstance::UpdateControllerState(float DeltaTime)
 	{
 		CentroidToPredatorDistance = Fish->BelongingGroup->CentroidToPredatorDistance;
 		bVision = Fish->bVision;
-		bCommunicationFactor = Fish->bCommunicationFactor;
-		AverageInformationTransfer = Fish->BelongingGroup->AverageInformationTransfer;
-		NearestNeighbourDistance = Fish->BelongingGroup->NearestNeighbourDistance;
+		//NearestNeighbourDistance = Fish->BelongingGroup->NearestNeighbourDistance;
 		Fear = Fish->RippleForce;
 
 		//TODO: update ripple force, predator state, SkitterDistance
+		const APredatorCharacter* PredatorCharacter =
+			Cast<APredatorCharacter>(UGameplayStatics::GetPlayerPawn(this, 0));
+		if(PredatorCharacter)
+		{
+			PredatorState = PredatorCharacter->PredatorState;
+		}
+		
 	}
 	
 }

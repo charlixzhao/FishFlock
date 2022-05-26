@@ -27,9 +27,6 @@ public:
 private:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Components", meta=(AllowPrivateAccess="true"))
 	TObjectPtr<USkeletalMeshComponent> Mesh;
-
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Components", meta=(AllowPrivateAccess="true"))
-	TObjectPtr<USkeletalMeshComponent> ControllerMesh;
 	
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Components", meta=(AllowPrivateAccess="true"))
 	TObjectPtr<class UArrowComponent> Arrow;
@@ -53,7 +50,6 @@ private:
 	
 	
 	bool bVision;
-	bool bCommunicationFactor;
 	float RippleForce;
 	float SkitterDistance;
 	

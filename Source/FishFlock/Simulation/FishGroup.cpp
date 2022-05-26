@@ -3,31 +3,12 @@
 
 #include "FishGroup.h"
 #include "Fish.h"
+#include "Components/SphereComponent.h"
 #include "GameFramework/Character.h"
 #include "Kismet/GameplayStatics.h"
 #include "Kismet/KismetMathLibrary.h"
 
 
-void FFishCommunicationSystem::BroadCast()
-{
-	bool bAllReceived = true;
-	for(AFish const* Leader : Leaders)
-	{
-		for(AFish* Follower : FishGroup->NearestNeighbours[Leader])
-		{
-			if(!Received[Follower->Index])
-			{
-				bAllReceived = false;
-				Received[Follower->Index] = true;
-				Follower->bCommunicationFactor = CommunicationMessage == EFishCommunicationMessage::PredatorDetected;
-				Leaders.AddUnique(Follower);
-			}
-		}
-	}
-
-	bActive = !bAllReceived;
-	
-}
 
 // Sets default values
 AFishGroup::AFishGroup()
@@ -47,24 +28,9 @@ AFishGroup::AFishGroup()
 	rule_3_dist = 999.0;
 	//maximum speed
 	max_speed = 50.0;
-}
 
-void AFishGroup::StartOrAddLeaderToCommunicationSession(AFish* Leader, EFishCommunicationMessage Message)
-{
-	if(FishCommunicationSystem.bActive && FishCommunicationSystem.CommunicationMessage == Message)
-	{
-		FishCommunicationSystem.Leaders.AddUnique(Leader);
-		FishCommunicationSystem.Received[Leader->Index] = true;
-	}
-	else
-	{
-		FishCommunicationSystem = FFishCommunicationSystem();
-		FishCommunicationSystem.Leaders.AddUnique(Leader);
-		FishCommunicationSystem.CommunicationMessage = Message;
-		FishCommunicationSystem.Received.SetNumZeroed(Fishes.Num());
-		FishCommunicationSystem.FishGroup = this;
-		FishCommunicationSystem.bActive = true;
-	}
+	ControllerMesh = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("ControllerMesh"));
+	if(!RootComponent) RootComponent = ControllerMesh;
 }
 
 TArray<TObjectPtr<AFish>> AFishGroup::GetNearestNeighboursByPercentage(AFish const* InFish, float Percentage)
@@ -92,11 +58,15 @@ TArray<TObjectPtr<AFish>> AFishGroup::GetNearestNeighboursByPercentage(AFish con
 	return Result;
 }
 
-void AFishGroup::TickCommunicationSystem()
+
+void AFishGroup::UpdateFishVelocities_Herd(float DeltaTime)
 {
-	if(FishCommunicationSystem.bActive)
+	if(Predator)
 	{
-		FishCommunicationSystem.BroadCast();
+		for(AFish* Fish : Fishes)
+		{
+			Fish->Velocity = (Fish->GetActorLocation() - Predator->GetActorLocation()).GetSafeNormal() * max_speed;
+		}
 	}
 }
 
@@ -126,11 +96,7 @@ void AFishGroup::BeginPlay()
 		
 		InitFishPositions();
 
-		FTimerDelegate CommunicationTimerDelegate;
-		CommunicationTimerDelegate.BindUObject(this, &AFishGroup::TickCommunicationSystem);
-		GetWorldTimerManager().SetTimer(CommunicationTimerHandle, CommunicationTimerDelegate, CommunicationInterval, true);
 	}
-	
 }
 
 // Called every frame
@@ -164,6 +130,10 @@ void AFishGroup::InitFishPositions()
 void AFishGroup::UpdateFishVelocities(float DeltaTime)
 {
 	//TODO: update the fish velocity (expressed in world frame)
+
+	//UpdateFishVelocities_Herd(DeltaTime);
+	UpdateFishVelocities_Ball(DeltaTime);
+	/*
 	for(AFish* Fish : Fishes)
 	{
 		//dummy placeholder: set the velocity to zero
@@ -188,6 +158,7 @@ void AFishGroup::UpdateFishVelocities(float DeltaTime)
 		}
 		//UE_LOG(LogTemp, Warning, TEXT("fish vel is %s"), *Fish->Velocity.ToString());
 	}
+	*/
 }
 
 void AFishGroup::UpdateControlParameters(float DeltaTime)
@@ -196,11 +167,9 @@ void AFishGroup::UpdateControlParameters(float DeltaTime)
 	for(const AFish* Fish : Fishes) LocationSum += Fish->GetActorLocation();
 	Centroid = LocationSum / Fishes.Num();
 	CentroidToPredatorDistance = FVector::Distance(Centroid, Predator->GetActorLocation());
+	
 
-	float CommunicationSum = 0;
-	for(AFish const* Fish : Fishes) CommunicationSum += Fish->bCommunicationFactor ? 1.f : 0.f;
-	AverageInformationTransfer = CommunicationSum / Fishes.Num();
-
+	/*
 	TArray<float> Distance;
 	for(AFish* Fish : Fishes)
 	{
@@ -211,6 +180,7 @@ void AFishGroup::UpdateControlParameters(float DeltaTime)
 		}
 	}
 	NearestNeighbourDistance = FMath::Min(Distance);
+	*/
 	
 }
 
@@ -242,6 +212,7 @@ FVector AFishGroup::Rule_1_Cohesion(AFish const* Fish)
 //Rule 2: Boids try to keep a small distance away from other objects (including other boids).
 FVector AFishGroup::Rule_2_Separation(AFish const* Fish)
 {
+	rule_2_dist = Fish->SphereCollider->GetScaledSphereRadius()*2.f;
 	//Main idea: move away from near-collision boids
 	FVector v(0);
 	//Position of current boid

@@ -28,10 +28,16 @@ protected:
 	
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Config")
 	float VisionDistance = 300.f;
-	
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Threshold")
-	float DistanceToPredator_Threshold = 300.f;
 
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Threshold")
+	float HerdDistance_Threshold = 90.f;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Threshold")
+	float SkitterDistance_Threshold = 20.f;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Threshold")
+	float Force_Threshold = 5.f;
+	
 	
 protected:
 	UPROPERTY(BlueprintReadOnly, Category="Predator")
@@ -42,15 +48,9 @@ protected:
 
 	UPROPERTY(BlueprintReadOnly, Category="Vision")
 	bool bVision;
-
-	UPROPERTY(BlueprintReadOnly, Category="Communication")
-	bool bCommunicationFactor;
-
-	UPROPERTY(BlueprintReadOnly, Category="Communication")
-	float AverageInformationTransfer;
 	
-	UPROPERTY(BlueprintReadOnly, Category="Lateral")
-	float NearestNeighbourDistance;
+	//UPROPERTY(BlueprintReadOnly, Category="Lateral")
+	//float NearestNeighbourDistance;
 		
 	UPROPERTY(BlueprintReadOnly, Category="Lateral")
 	float RippleForce;

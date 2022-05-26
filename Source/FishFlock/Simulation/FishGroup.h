@@ -10,24 +10,7 @@
 
 
 class AFish;
-class AFishGroup;
 
-enum class EFishCommunicationMessage : uint8
-{
-	PredatorDetected,
-	PredatorLeave
-};
-
-struct FFishCommunicationSystem
-{
-	void BroadCast();
-	
-	EFishCommunicationMessage CommunicationMessage;
-	TArray<AFish*> Leaders;
-	TArray<bool> Received;
-	AFishGroup* FishGroup;
-	bool bActive;
-};
 
 UCLASS()
 class FISHFLOCK_API AFishGroup : public AActor
@@ -37,14 +20,12 @@ class FISHFLOCK_API AFishGroup : public AActor
 public:	
 	// Sets default values for this actor's properties
 	AFishGroup();
-	void StartOrAddLeaderToCommunicationSession(AFish* Leader, EFishCommunicationMessage Message);
 	
 	TObjectPtr<ACharacter> Predator;
 	FVector Centroid;
 	EPredatorState PredatorState;
 	float CentroidToPredatorDistance;
-	float AverageInformationTransfer;
-	float NearestNeighbourDistance;
+	//float NearestNeighbourDistance;
 	TMap<TObjectPtr<AFish>, TArray<TObjectPtr<AFish>>> NearestNeighbours;
 	
 protected:
@@ -97,8 +78,10 @@ private:
 	FVector Rule_2_Separation (AFish const* Fish);
 	FVector Rule_3_Alignment(AFish const* Fish);
 	TArray<TObjectPtr<AFish>> GetNearestNeighboursByPercentage(AFish const* Fish, float Percentage);
-	void TickCommunicationSystem();
 
+	//Herd
+	void UpdateFishVelocities_Herd(float DeltaTime);
+	
 	//Ball
 	void UpdateFishVelocities_Ball(float DeltaTime);
 	//Ball
@@ -107,9 +90,11 @@ private:
 
 	
 private:
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Components", meta=(AllowPrivateAccess="true"))
+	TObjectPtr<USkeletalMeshComponent> ControllerMesh;
+
+	UPROPERTY(BlueprintReadOnly, meta=(AllowPrivateAccess="true"))
 	TArray<TObjectPtr<AFish>> Fishes;
-	FFishCommunicationSystem FishCommunicationSystem;
-	FTimerHandle CommunicationTimerHandle;
 };
 
 

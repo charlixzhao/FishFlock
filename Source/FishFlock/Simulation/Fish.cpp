@@ -21,9 +21,6 @@ AFish::AFish()
 	Mesh = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("Mesh"));
 	Mesh->SetupAttachment(RootComponent);
 	
-	ControllerMesh = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("ControllerMesh"));
-	ControllerMesh->SetupAttachment(RootComponent);
-	
 	Arrow = CreateDefaultSubobject<UArrowComponent>(TEXT("ForwardDirection"));
 	Arrow->SetupAttachment(RootComponent);
 }
@@ -43,12 +40,6 @@ void AFish::Tick(float DeltaTime)
 	FVector const FishForward = UKismetMathLibrary::GetForwardVector(GetActorRotation());
 	FVector const DirectionToPredator = (BelongingGroup->Predator->GetActorLocation() - GetActorLocation()).GetSafeNormal();
 	float const Angle = FMath::RadiansToDegrees(FMath::Acos(FishForward.Dot(DirectionToPredator)));
-	bool const NewVision = Angle <= 150.f && FVector::Distance(GetActorLocation(), BelongingGroup->Predator->GetActorLocation()) < VisionDistance;
-	if(NewVision != bVision)
-	{
-		BelongingGroup->StartOrAddLeaderToCommunicationSession(this,
-			NewVision ? EFishCommunicationMessage::PredatorDetected : EFishCommunicationMessage::PredatorLeave);
-	}
-	bVision = NewVision;
+	bVision = Angle <= 150.f && FVector::Distance(GetActorLocation(), BelongingGroup->Predator->GetActorLocation()) < VisionDistance;
 }
 
