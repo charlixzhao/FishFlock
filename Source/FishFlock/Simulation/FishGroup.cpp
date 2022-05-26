@@ -2,9 +2,6 @@
 
 
 #include "FishGroup.h"
-
-#include <d3d10.h>
-
 #include "Fish.h"
 #include "Animation/FishControllerAnimInstance.h"
 #include "Components/SphereComponent.h"
