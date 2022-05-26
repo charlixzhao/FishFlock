@@ -36,8 +36,6 @@ public:
 	void EnterFastAvoid();
 	
 	void LeaveFastAvoid();
-
-	
 	
 protected:
 	// Called when the game starts or when spawned
@@ -109,19 +107,10 @@ private:
 	
 private:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Components", meta=(AllowPrivateAccess="true"))
-	TObjectPtr<USceneComponent> SceneRoot;
-	
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Components", meta=(AllowPrivateAccess="true"))
 	TObjectPtr<USkeletalMeshComponent> ControllerMesh;
 
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Components", meta=(AllowPrivateAccess="true"))
-	TObjectPtr<class USplineComponent> TravelSpline;
-	
 	UPROPERTY(BlueprintReadOnly, meta=(AllowPrivateAccess="true"))
 	TArray<TObjectPtr<AFish>> Fishes;
-
-	float CumulativeWanderDistance = 0.f;
-	
 };
 
 
