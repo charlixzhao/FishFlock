@@ -36,6 +36,9 @@ private:
 	
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Locomotion", meta=(AllowPrivateAccess="true"))
 	FVector Velocity;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Locomotion", meta=(AllowPrivateAccess="true"))
+	FVector Acceleration;
 	
 	
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Config", meta=(AllowPrivateAccess="true"))

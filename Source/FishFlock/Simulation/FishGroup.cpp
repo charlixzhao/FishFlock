@@ -4,7 +4,6 @@
 #include "FishGroup.h"
 #include "Fish.h"
 #include "Animation/FishControllerAnimInstance.h"
-#include "Components/SphereComponent.h"
 #include "Components/SplineComponent.h"
 #include "GameFramework/Character.h"
 #include "Kismet/GameplayStatics.h"
@@ -75,13 +74,105 @@ TArray<TObjectPtr<AFish>> AFishGroup::GetNearestNeighboursByPercentage(AFish con
 	return Result;
 }
 
+TArray<FVector> AFishGroup::CollisionAvoidance(AFish* Fish)
+{
+	TArray<FVector> Result;
+	int32 MaxPointsNum = 10;
+	FVector Forward = UKismetMathLibrary::GetForwardVector(Fish->GetActorRotation());
+	float R = Fish->VisionDistance;
+	float Interval = 50.f;
+	for(float Distance = 0.f; Distance <= R; Distance += Interval)
+	{
+		float n = R-Distance;
+		float r = FMath::Sqrt(R*R-n*n);
+		FVector const Base = (Forward.Cross(FVector(0.f, 0.f,1.f))).GetSafeNormal();
+		float DistanceFraction = Distance/R;
+		int32 PointsNum = FMath::Max(1, static_cast<int32>(DistanceFraction * MaxPointsNum));
+		for(int32 Idx = 0; Idx <= PointsNum; ++Idx)
+		{
+			float Angle = (360.f) * (static_cast<float>(Idx)/static_cast<float>(PointsNum));
+			FRotator Rotation = UKismetMathLibrary::RotatorFromAxisAndAngle(Forward, Angle);
+			FVector Outward = Rotation.RotateVector(Base);
+			FVector SamplePoint = Fish->GetActorLocation() + Forward*n + Outward*r;
+			FHitResult OutHit;
+			bool DetectCollision = UKismetSystemLibrary::LineTraceSingle(this, Fish->GetActorLocation(), SamplePoint, UEngineTypes::ConvertToTraceType(ECC_Visibility),
+				true, {}, EDrawDebugTrace::ForOneFrame, OutHit, true);
+			if(!DetectCollision)
+			{
+				Result.Push((SamplePoint-Fish->GetActorLocation()).GetSafeNormal());
+			}
+		}
+	}
+	return Result;
+}
+
+float AngleBetweenVectors(FVector V, FVector W)
+{
+	V.Normalize();
+	W.Normalize();
+	return FMath::RadiansToDegrees(FMath::Acos(V.Dot(W)));
+}
+
+//find the index and value in a array which has smallest distance
+// to the Goal, distance computing by the dist func
+template<typename T, typename Dist>
+auto FindNearest(TArray<T> const& Values, T const& Goal, Dist DistFunc)
+{
+	ensure(Values.Num() > 0);
+	using DistType = std::invoke_result_t<Dist, T const&, T const&>;
+	
+	int32 ArgMin = -1;
+	DistType CurrentMin{};
+	for(int32 Idx = 0; Idx < Values.Num(); ++Idx)
+	{
+		const float Distance = DistFunc(Values[Idx], Goal);
+		if(ArgMin == -1 || Distance < CurrentMin)
+		{
+			CurrentMin = Distance;
+			ArgMin = Idx;
+		}
+	}
+	return TTuple<int32, DistType>{ArgMin, CurrentMin};
+}
+
 void AFishGroup::UpdateFishVelocities_Wander(float DeltaTime)
 {
 	CumulativeWanderDistance += max_speed_current * DeltaTime;
 	CumulativeWanderDistance = FMath::Fmod(CumulativeWanderDistance, 	TravelSpline->GetSplineLength());
 	const FVector LeaderLocation = TravelSpline->GetWorldLocationAtDistanceAlongSpline(CumulativeWanderDistance);
-	Fishes[0]->Velocity = (LeaderLocation - Fishes[0]->GetActorLocation())/DeltaTime;
-
+	const FVector SplineVelocity = Fishes[0]->GetActorForwardVector() * max_speed_current;
+		//(LeaderLocation - Fishes[0]->GetActorLocation()) / DeltaTime;
+	//Fishes[0]->Velocity = SplineVelocity;
+	const TArray<FVector> NoCollisionDirections = CollisionAvoidance(Fishes[0]);
+	if(NoCollisionDirections.Num() == 0)
+	{
+		//no possible direction found, stop in lace
+		Fishes[0]->Velocity = FVector::ZeroVector;
+	}
+	else
+	{
+		//find the possible direction which smallest angle with the current velocity
+		float NearestValue;
+		int32 ArgNearestDirection;
+		Tie(ArgNearestDirection, NearestValue) = FindNearest(NoCollisionDirections, SplineVelocity, AngleBetweenVectors);
+		const FVector NearestDirection = NoCollisionDirections[ArgNearestDirection].GetSafeNormal() * max_speed_current;
+		//Fishes[0]->Velocity = NearestDirection;
+		
+		if(NearestValue >= 5.f)
+		{
+			Fishes[0]->Velocity = FMath::VInterpTo(Fishes[0]->Velocity, NearestDirection, DeltaTime, 5.f);
+			//Fishes[0]->Acceleration = (NearestDirection - Fishes[0]->Velocity).GetSafeNormal() * max_acceleration;
+		}
+		else
+		{
+			//Fishes[0]->Velocity = SplineVelocity;
+			Fishes[0]->Velocity = FMath::VInterpTo(Fishes[0]->Velocity, SplineVelocity, DeltaTime, 5.f);
+			//Fishes[0]->Acceleration = FVector::ZeroVector;//(NearestDirection - Fishes[0]->Velocity).GetSafeNormal() * max_acceleration;
+		}
+	
+		
+	}
+	
 	for(int32 Idx = 1; Idx < Fishes.Num(); ++Idx)
 	{
 		AFish* Fish = Fishes[Idx];
@@ -165,6 +256,7 @@ void AFishGroup::Tick(float DeltaTime)
 	UpdateFishVelocities(DeltaTime);
 	for(AFish* Fish : Fishes)
 	{
+		Fish->Velocity += DeltaTime * Fish->Acceleration;
 		Fish->SetActorLocation(Fish->GetActorLocation() + DeltaTime * Fish->Velocity);
 		FRotator const RotTarget = UKismetMathLibrary::MakeRotFromX(Fish->Velocity);
 		Fish->SetActorRotation(UKismetMathLibrary::RInterpTo(Fish->GetActorRotation(), RotTarget, DeltaTime, 5.f));

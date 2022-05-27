@@ -78,6 +78,9 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Boid")
 	double max_speed_fast_avoid = 100.f;
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Boid")
+	double max_acceleration = 1024.f;
+	
 	double max_speed_current;
 public:	
 	// Called every frame
@@ -93,6 +96,8 @@ private:
 	FVector Rule_3_Alignment(AFish const* Fish);
 	TArray<TObjectPtr<AFish>> GetNearestNeighboursByPercentage(AFish const* Fish, float Percentage);
 
+	TArray<FVector> CollisionAvoidance(AFish* Fish);
+	
 	void UpdateFishVelocities_Wander(float DeltaTime);
 	//Herd
 	void UpdateFishVelocities_Herd(float DeltaTime);
