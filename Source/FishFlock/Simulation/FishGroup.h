@@ -38,6 +38,8 @@ public:
 	void LeaveFastAvoid();
 
 	
+	bool IsAnyFishFront();
+	bool HasFlockShiftNinetyDegree();
 	
 protected:
 	// Called when the game starts or when spawned
@@ -120,6 +122,18 @@ private:
 	bool Split_Initialized = false;
 	void UpdateFishVelocities_Split(float DeltaTime);
 	void Split_and_FindLeader();
+
+	void UpdateFishVelocities_Fountain(float DeltaTime);
+
+	void UpdateFishVelocities_Hourglass(float DeltaTime);
+
+	UPROPERTY(EditAnywhere, Category = "Hourglass")
+	bool Hourglass_Initialized = false;
+
+	UPROPERTY(EditAnywhere, Category = "Hourglass")
+	FVector Hourglass_Initial_Vector;
+	UPROPERTY(EditAnywhere, Category = "Hourglass")
+	FVector Hourglass_Current_Vector;
 	
 private:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Components", meta=(AllowPrivateAccess="true"))

@@ -39,6 +39,18 @@ void UFishControllerAnimInstance::UpdateControllerState(float DeltaTime)
 		if(ChaseTime >= 0.f) ChaseTime += DeltaTime;
 		if(FlashInTime >= 0.f) FlashInTime += DeltaTime;
 		if(FlashOutTime >= 0.f) FlashOutTime += DeltaTime;
+		if(FountainTime >= 0.f)
+		{
+			FountainTime += DeltaTime;
+			//TODO add frontal fish check if Fountain behaves correctly
+			//FishGroup->IsAnyFishFront();
+		}
+		if(HourglassTime >= 0.f)
+		{
+			HourglassTime += DeltaTime;
+			//TODO add 90 Degree check if Hourglass behaves correctly
+			//FishGroup->HasFlockShiftNinetyDegree();
+		}
 		UpdatePredatorState();
 	}
 	

@@ -88,7 +88,12 @@ protected:
 
 	UPROPERTY(BlueprintReadWrite, Category="Transition")
 	float FlashInTime = -1.f;
-	
+
+	UPROPERTY(BlueprintReadWrite, Category="Transition")
+	float FountainTime = -1.f;
+
+	UPROPERTY(BlueprintReadWrite, Category="Transition")
+	float HourglassTime = -1.f;
 private:
 	void UpdatePredatorState();
 private:

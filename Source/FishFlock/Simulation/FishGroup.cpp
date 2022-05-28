@@ -291,6 +291,8 @@ void AFishGroup::UpdateFishVelocities(float DeltaTime)
 	else if (CurrentStateName == "FlashOut") UpdateFishVelocities_FlashOutward(DeltaTime);
 	else if (CurrentStateName == "FlashIn") UpdateFishVelocities_FlashInward(DeltaTime);
 	else if (CurrentStateName == "Split") UpdateFishVelocities_Split(DeltaTime);
+	else if (CurrentStateName == "Fountain") UpdateFishVelocities_Fountain(DeltaTime);
+	else if (CurrentStateName == "Hourglass") UpdateFishVelocities_Hourglass(DeltaTime);
 }
 
 void AFishGroup::UpdateControlParameters(float DeltaTime)
@@ -567,4 +569,103 @@ void AFishGroup::Split_and_FindLeader()
 	}
 	Split_Initialized = true;
 }
+
+void AFishGroup::UpdateFishVelocities_Fountain(float DeltaTime)
+{
+	const FVector Predator_Velocity = Predator->GetVelocity();
+	const FVector Predator_Location = Predator->GetActorLocation();
+	const double Velocity_Scale = 0.66;
+	const double Rotation_Scale = 0.34;
+	for(AFish* Fish : Fishes)
+	{
+		if((Fish->GetActorLocation() - Predator_Location).CosineAngle2D(FVector(1,0,0)) >= -0.5)
+		{
+			const FVector Runaway_Velocity = (Fish->GetActorLocation() - Predator->GetActorLocation()).GetSafeNormal();
+			const FVector Rotational_Velocity = Predator_Velocity.GetSafeNormal() * -1;
+			Fish->Velocity = (Velocity_Scale * Runaway_Velocity + Rotational_Velocity * Rotation_Scale) * max_speed_current;
+		}
+		else
+		{
+			const FVector Cohesion_Vec = Rule_1_Cohesion(Fish);
+			const FVector Separation_Vec = Rule_2_Separation(Fish);
+			const FVector Alignment_Vec = Rule_3_Alignment(Fish);
+			const double Cohesion_Scale = 0.2;
+			const double Separation_Scale = 1.0;
+			const double Alignment_Scale = 0.5;
+			Fish->Velocity += Cohesion_Vec * Cohesion_Scale + Separation_Vec * Separation_Scale + Alignment_Vec * Alignment_Scale;
+			
+			//Clamp to max speed
+			if (Fish->Velocity.Length() > max_speed_current)
+			{
+				Fish->Velocity /= Fish->Velocity.Length() / max_speed_current;
+			}
+		}
+	}
+}
+
+void AFishGroup::UpdateFishVelocities_Hourglass(float DeltaTime)
+{
+	FVector Average_Velocity(0,0,0);
+	//get fish average velocity
+	for(AFish* Fish:Fishes)
+	{
+		Average_Velocity += Fish->Velocity;
+	}
+	Average_Velocity = Average_Velocity / Fishes.Num();
+	if(!Hourglass_Initialized)
+	{
+		Hourglass_Initial_Vector = Average_Velocity;
+		Hourglass_Initialized = true;
+	}
+
+	//Orthogonal Velocity, turning clockwise 90 degrees
+	const double Turning_Scale = 1.0;
+	FVector Turning_Velocity(0,0,0);
+	Turning_Velocity.X = Average_Velocity.Y * -1;
+	Turning_Velocity.Y = Average_Velocity.X;
+	Turning_Velocity.Z = Average_Velocity.Z;
+
+	FVector temp_current_average(0,0,0);
+	for(AFish *Fish:Fishes)
+	{
+		Fish->Velocity += Turning_Velocity * Turning_Scale;
+		
+		//Clamp to max speed
+		if (Fish->Velocity.Length() > max_speed_current)
+		{
+			Fish->Velocity /= Fish->Velocity.Length() / max_speed_current;
+		}
+		temp_current_average += Fish->Velocity;
+	}
+	Hourglass_Current_Vector = temp_current_average / Fishes.Num();
+}
+
+bool AFishGroup::IsAnyFishFront()
+{
+	const FVector Predator_Location = Predator->GetActorLocation();
+	for(AFish* Fish : Fishes)
+	{
+		if((Fish->GetActorLocation() - Predator_Location).CosineAngle2D(FVector(1,0,0)) >= -0.5)
+		{
+			return true;
+		}
+	}
+	return false;
+}
+
+bool AFishGroup::HasFlockShiftNinetyDegree()
+{
+	if(Hourglass_Initialized)
+	{
+		if(abs(Hourglass_Initial_Vector.CosineAngle2D(Hourglass_Current_Vector)) < 0.2)
+		{
+			return true;
+		}
+	}
+	return false;
+}
+
+
+
+
 
