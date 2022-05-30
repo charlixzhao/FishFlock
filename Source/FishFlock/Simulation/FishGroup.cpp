@@ -619,21 +619,22 @@ void AFishGroup::UpdateFishVelocities_Hourglass(float DeltaTime)
 	}
 
 	//Orthogonal Velocity, turning clockwise 90 degrees
-	const double Turning_Scale = 1.0;
+	const double Turning_Scale = 0.008;
 	FVector Turning_Velocity(0,0,0);
 	Turning_Velocity.X = Average_Velocity.Y * -1;
 	Turning_Velocity.Y = Average_Velocity.X;
-	Turning_Velocity.Z = Average_Velocity.Z;
+	Turning_Velocity.Z = 0;
 
 	FVector temp_current_average(0,0,0);
 	for(AFish *Fish:Fishes)
 	{
 		Fish->Velocity += Turning_Velocity * Turning_Scale;
+		Fish->Velocity /= Fish->Velocity.Length() / max_speed_escape;
 		
 		//Clamp to max speed
-		if (Fish->Velocity.Length() > max_speed_current)
+		if (Fish->Velocity.Length() > max_speed_escape)
 		{
-			Fish->Velocity /= Fish->Velocity.Length() / max_speed_current;
+			Fish->Velocity /= Fish->Velocity.Length() / max_speed_escape;
 		}
 		temp_current_average += Fish->Velocity;
 	}

@@ -84,6 +84,10 @@ protected:
 	double max_acceleration = 1024.f;
 	
 	double max_speed_current;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Boid")
+	double max_speed_escape = 300.f;
+
 public:	
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
