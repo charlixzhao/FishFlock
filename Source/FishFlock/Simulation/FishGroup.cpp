@@ -495,45 +495,53 @@ void AFishGroup::UpdateFishVelocities_Split(float DeltaTime)
 	}
 	
 	//Set leader position as center for cohesion rule
-	FVector LeftCenter = LeftLeader->GetActorLocation();
-	FVector RightCenter = RightLeader->GetActorLocation();
-	
-	for (AFish * Fish : SplitLeft)
+	if(LeftLeader)
 	{
-		if(Fish == LeftLeader)
+		FVector LeftCenter = LeftLeader->GetActorLocation();
+			
+		for (AFish * Fish : SplitLeft)
 		{
-			Fish->Velocity = (Fish->GetActorLocation() - Predator->GetActorLocation()).GetSafeNormal() * max_speed_current;
-		}
-		else
-		{
-			const double Cohension_Scale = 0.1;
-			const double Separation_Scale = 1.0;
-			const double Alignment_Scale = 0.5;
+			if(Fish == LeftLeader)
+			{
+				Fish->Velocity = (Fish->GetActorLocation() - Predator->GetActorLocation()).GetSafeNormal() * max_speed_escape;
+			}
+			else
+			{
+				const double Cohension_Scale = 2.0;
+				const double Separation_Scale = 4.0;
+				const double Alignment_Scale = 0.5;
 
-			FVector Cohesion_Vec = LeftCenter - Fish->GetActorLocation();
-			FVector Separation_Vec = Rule_2_Separation(Fish);
-			FVector Alignment_Vec = Rule_3_Alignment(Fish);
+				FVector Cohesion_Vec = LeftCenter - Fish->GetActorLocation();
+				FVector Separation_Vec = Rule_2_Separation(Fish);
+				FVector Alignment_Vec = Rule_3_Alignment(Fish);
 
-			Fish->Velocity = (Cohension_Scale * Cohesion_Vec) + (Separation_Scale * Separation_Vec) + (Alignment_Scale * Alignment_Vec);
+				Fish->Velocity = (Cohension_Scale * Cohesion_Vec) + (Separation_Scale * Separation_Vec) + (Alignment_Scale * Alignment_Vec);
+			}
 		}
 	}
-	for (AFish * Fish : SplitRight)
+	if(RightLeader)
 	{
-		if(Fish == RightLeader)
-		{
-			Fish->Velocity = (Fish->GetActorLocation() - Predator->GetActorLocation()).GetSafeNormal() * max_speed_current;
-		}
-		else
-		{
-			const double Cohension_Scale = 0.1;
-			const double Separation_Scale = 1.0;
-			const double Alignment_Scale = 0.5;
+		FVector RightCenter = RightLeader->GetActorLocation();
 
-			FVector Cohesion_Vec = RightCenter - Fish->GetActorLocation();
-			FVector Separation_Vec = Rule_2_Separation(Fish);
-			FVector Alignment_Vec = Rule_3_Alignment(Fish);
+		
+		for (AFish * Fish : SplitRight)
+		{
+			if(Fish == RightLeader)
+			{
+				Fish->Velocity = (Fish->GetActorLocation() - Predator->GetActorLocation()).GetSafeNormal() * max_speed_escape;
+			}
+			else
+			{
+				const double Cohension_Scale = 1.0;
+				const double Separation_Scale = 1.0;
+				const double Alignment_Scale = 0.5;
 
-			Fish->Velocity = (Cohension_Scale * Cohesion_Vec) + (Separation_Scale * Separation_Vec) + (Alignment_Scale * Alignment_Vec);
+				FVector Cohesion_Vec = RightCenter - Fish->GetActorLocation();
+				FVector Separation_Vec = Rule_2_Separation(Fish);
+				FVector Alignment_Vec = Rule_3_Alignment(Fish);
+
+				Fish->Velocity = (Cohension_Scale * Cohesion_Vec) + (Separation_Scale * Separation_Vec) + (Alignment_Scale * Alignment_Vec);
+			}
 		}
 	}
 }
@@ -546,9 +554,12 @@ void AFishGroup::Split_and_FindLeader()
 	for(AFish* Fish: Fishes)
 	{
 		// Calculate the Cosine between (prey - predator)vector and the X axis, split fishes into two groups
-		if ((Fish->GetActorLocation() - Predator->GetActorLocation()).CosineAngle2D(FVector(1,0,0)) > 0)
+		const FVector A = Predator->GetVelocity();
+		const FVector B = Fish->GetActorLocation() - Predator->GetActorLocation();
+		if ((A.X * B.Y - B.X * A.Y) > 0)
 		{
 			SplitLeft.Add(Fish);
+			//UE_LOG(LogTemp, Warning, TEXT("Left side adds one more fish."));
 			float TempDist = FVector::Dist(Fish->GetActorLocation(),Predator->GetActorLocation());
 			if(TempDist < LeftMinDist)
 			{
@@ -559,6 +570,7 @@ void AFishGroup::Split_and_FindLeader()
 		else
 		{
 			SplitRight.Add(Fish);
+			//UE_LOG(LogTemp, Warning, TEXT("Right side adds one more fish."));
 			float TempDist = FVector::Dist(Fish->GetActorLocation(),Predator->GetActorLocation());
 			if(TempDist < RightMinDist)
 			{

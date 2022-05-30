@@ -119,9 +119,9 @@ private:
 	void UpdateFishVelocities_FlashInward(float DeltaTime);
 
 	UPROPERTY(EditAnywhere, Category = "Split")
-	AFish* LeftLeader;
+	AFish* LeftLeader = nullptr;
 	UPROPERTY(EditAnywhere, Category = "Split")
-	AFish* RightLeader;
+	AFish* RightLeader = nullptr;
 	UPROPERTY(EditAnywhere, Category = "Split")
 	bool Split_Initialized = false;
 	void UpdateFishVelocities_Split(float DeltaTime);
