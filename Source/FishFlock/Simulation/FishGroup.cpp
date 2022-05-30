@@ -23,7 +23,7 @@ AFishGroup::AFishGroup()
 	rule_1_dist = 999.0;
 	//Seperation
 	rule_2_scale = 1.0;
-	rule_2_dist = 20.0;
+	rule_2_dist = 60.0;
 	//Alignment
 	rule_3_scale = 0.125;
 	rule_3_dist = 999.0;
@@ -198,6 +198,69 @@ void AFishGroup::UpdateFishVelocities_Wander(float DeltaTime)
 }
 
 
+void AFishGroup::UpdateFishVelocities_Compact(float DeltaTime)
+{
+	CumulativeWanderDistance += max_speed_current * DeltaTime;
+	CumulativeWanderDistance = FMath::Fmod(CumulativeWanderDistance, TravelSpline->GetSplineLength());
+	const FVector LeaderLocation = TravelSpline->GetWorldLocationAtDistanceAlongSpline(CumulativeWanderDistance);
+	const FVector SplineVelocity = Fishes[0]->GetActorForwardVector() * max_speed_current;
+	//(LeaderLocation - Fishes[0]->GetActorLocation()) / DeltaTime;
+//Fishes[0]->Velocity = SplineVelocity;
+	const TArray<FVector> NoCollisionDirections = CollisionAvoidance(Fishes[0]);
+	if (NoCollisionDirections.Num() == 0)
+	{
+		//no possible direction found, stop in lace
+		Fishes[0]->Velocity = FVector::ZeroVector;
+	}
+	else
+	{
+		//find the possible direction which smallest angle with the current velocity
+		float NearestValue;
+		int32 ArgNearestDirection;
+		Tie(ArgNearestDirection, NearestValue) = FindNearest(NoCollisionDirections, SplineVelocity, AngleBetweenVectors);
+		const FVector NearestDirection = NoCollisionDirections[ArgNearestDirection].GetSafeNormal() * max_speed_current;
+		//Fishes[0]->Velocity = NearestDirection;
+
+		if (NearestValue >= 5.f)
+		{
+			Fishes[0]->Velocity = FMath::VInterpTo(Fishes[0]->Velocity, NearestDirection, DeltaTime, 5.f);
+			//Fishes[0]->Acceleration = (NearestDirection - Fishes[0]->Velocity).GetSafeNormal() * max_acceleration;
+		}
+		else
+		{
+			//Fishes[0]->Velocity = SplineVelocity;
+			Fishes[0]->Velocity = FMath::VInterpTo(Fishes[0]->Velocity, SplineVelocity, DeltaTime, 5.f);
+			//Fishes[0]->Acceleration = FVector::ZeroVector;//(NearestDirection - Fishes[0]->Velocity).GetSafeNormal() * max_acceleration;
+		}
+
+
+	}
+
+	for (int32 Idx = 1; Idx < Fishes.Num(); ++Idx)
+	{
+		AFish* Fish = Fishes[Idx];
+
+		//Rule 1: Boids try to fly towards the centre of mass of neighbouring boids.
+		FVector rule1_vec = Rule_1_Cohesion(Fish);
+
+		//Rule 2: Boids try to keep a small distance away from other objects (including other boids).
+		FVector rule2_vec = Rule_2_Compact(Fish);
+
+		//Rule 3: Boids try to match velocity with near boids.
+		FVector rule3_vec = Rule_3_Alignment(Fish);
+
+		//Add to old velocity
+		Fish->Velocity += rule_1_scale * rule1_vec + rule_2_scale * rule2_vec + rule_3_scale * rule3_vec;
+		//Clamp to max speed
+		if (Fish->Velocity.Length() > max_speed_current)
+		{
+			Fish->Velocity /= Fish->Velocity.Length() / max_speed_current;
+		}
+	}
+
+}
+
+
 void AFishGroup::UpdateFishVelocities_Herd(float DeltaTime)
 {
 	if(Predator)
@@ -285,7 +348,7 @@ void AFishGroup::UpdateFishVelocities(float DeltaTime)
 	FName const CurrentStateName = Cast<UFishControllerAnimInstance>(ControllerMesh->GetAnimInstance())->GetCurrentStateName();
 	GEngine->AddOnScreenDebugMessage(1, 2.f, FColor::Yellow, CurrentStateName.ToString());
 	if(CurrentStateName == "Wander") UpdateFishVelocities_Wander(DeltaTime);
-	else if (CurrentStateName == "Compact") UpdateFishVelocities_Wander(DeltaTime);
+	else if (CurrentStateName == "Compact") UpdateFishVelocities_Compact(DeltaTime);
 	else if (CurrentStateName == "Ball") UpdateFishVelocities_Ball(DeltaTime);
 	else if (CurrentStateName == "Herd") UpdateFishVelocities_Herd(DeltaTime);
 	else if (CurrentStateName == "FlashOut") UpdateFishVelocities_FlashOutward(DeltaTime);
@@ -384,6 +447,26 @@ FVector AFishGroup::Rule_3_Alignment(AFish const* Fish)
 	}
 	//Average the result
 	v /= count;
+	return v;
+}
+
+FVector AFishGroup::Rule_2_Compact(AFish const* Fish)
+{
+	double rule_2_compact_dist = 20.0;
+	//rule_2_dist = Fish->SphereCollider->GetScaledSphereRadius()*4.f;
+	//Main idea: move away from near-collision boids
+	FVector v(0);
+	//Position of current boid
+	FVector const curr_pos = Fish->GetActorLocation();
+	//Iterate all boids, add a counter velocity to stay away from those close ones
+	for (const AFish* i : Fishes)
+	{
+		//Check if near
+		if (FVector::Dist(i->GetActorLocation(), curr_pos) < rule_2_compact_dist)
+		{
+			v -= (i->GetActorLocation() - curr_pos);
+		}
+	}
 	return v;
 }
 

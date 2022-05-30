@@ -107,7 +107,10 @@ private:
 	void UpdateFishVelocities_Wander(float DeltaTime);
 	//Herd
 	void UpdateFishVelocities_Herd(float DeltaTime);
-	
+	//Compact
+	void UpdateFishVelocities_Compact(float DeltaTime);
+	FVector Rule_2_Compact(AFish const* Fish);
+
 	//Ball
 	void UpdateFishVelocities_Ball(float DeltaTime);
 	//Ball
