@@ -2,6 +2,7 @@
 
 
 #include "Simulation/PredatorCharacter.h"
+#include "GameFramework/CharacterMovementComponent.h"
 
 // Sets default values
 APredatorCharacter::APredatorCharacter()
@@ -15,7 +16,7 @@ APredatorCharacter::APredatorCharacter()
 void APredatorCharacter::BeginPlay()
 {
 	Super::BeginPlay();
-	
+	GetCharacterMovement()->SetMovementMode(MOVE_Flying);
 }
 
 // Called every frame
