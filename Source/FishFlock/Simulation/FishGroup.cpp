@@ -673,11 +673,43 @@ void AFishGroup::UpdateFishVelocities_Fountain(float DeltaTime)
 	const double Rotation_Scale = 0.34;
 	for(AFish* Fish : Fishes)
 	{
+		//front
 		if((Fish->GetActorLocation() - Predator_Location).CosineAngle2D(FVector(1,0,0)) >= -0.5)
 		{
-			const FVector Runaway_Velocity = (Fish->GetActorLocation() - Predator->GetActorLocation()).GetSafeNormal();
-			const FVector Rotational_Velocity = Predator_Velocity.GetSafeNormal() * -1;
-			Fish->Velocity = (Velocity_Scale * Runaway_Velocity + Rotational_Velocity * Rotation_Scale) * max_speed_current;
+			const FVector A = Predator->GetVelocity();
+			const FVector B = Fish->GetActorLocation() - Predator->GetActorLocation();
+			UE_LOG(LogTemp, Warning, TEXT("Predator Velocity: %f, %f, %f"), A.X,A.Y,A.Z);
+			
+			//Left
+			if ((A.X * B.Y - B.X * A.Y) < 0)
+			{
+				UE_LOG(LogTemp, Warning, TEXT("Left side adds one fish."));
+				
+				const FVector Runaway_Velocity = (Fish->GetActorLocation() - Predator->GetActorLocation()).GetSafeNormal();
+				//const FVector Rotational_Velocity = Predator_Velocity.GetSafeNormal() * -1;
+				FVector New_Velocity(Runaway_Velocity.Y,-Runaway_Velocity.X,Runaway_Velocity.Z);
+				Fish->Velocity = New_Velocity * max_speed_escape;
+				//Fish->Velocity = (Velocity_Scale * Runaway_Velocity + Rotational_Velocity * Rotation_Scale) * max_speed_escape;
+				Fish->Velocity.Z = 0;
+				/*if(abs(Fish->Velocity.Z) > 5)
+				{
+					Fish->Velocity.Z /= Fish->Velocity.Z / 5; 
+				}*/
+			}
+			else
+			{
+				UE_LOG(LogTemp, Warning, TEXT("Right side adds one fish."));
+				
+				const FVector Runaway_Velocity = (Fish->GetActorLocation() - Predator->GetActorLocation()).GetSafeNormal();
+				FVector New_Velocity(-Runaway_Velocity.Y,Runaway_Velocity.X,Runaway_Velocity.Z);
+				
+				Fish->Velocity = New_Velocity * max_speed_escape;
+				Fish->Velocity.Z = 0;
+				/*if(abs(Fish->Velocity.Z) > 5)
+				{
+					Fish->Velocity.Z /= Fish->Velocity.Z / 5; 
+				}*/
+			}
 		}
 		else
 		{
@@ -690,9 +722,9 @@ void AFishGroup::UpdateFishVelocities_Fountain(float DeltaTime)
 			Fish->Velocity += Cohesion_Vec * Cohesion_Scale + Separation_Vec * Separation_Scale + Alignment_Vec * Alignment_Scale;
 			
 			//Clamp to max speed
-			if (Fish->Velocity.Length() > max_speed_current)
+			if (Fish->Velocity.Length() > max_speed_escape)
 			{
-				Fish->Velocity /= Fish->Velocity.Length() / max_speed_current;
+				Fish->Velocity /= Fish->Velocity.Length() / max_speed_escape;
 			}
 		}
 	}
