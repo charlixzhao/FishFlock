@@ -576,7 +576,11 @@ void AFishGroup::UpdateFishVelocities_FlashOutward(float DeltaTime)
 	{
 		for(AFish* Fish : Fishes)
 		{
-			Fish->Velocity = (Predator->GetActorLocation() - Fish->GetActorLocation()).GetSafeNormal() * max_speed_current;
+			Fish->Velocity = (Fish->GetActorLocation() - Predator->GetActorLocation()).GetSafeNormal() * 1000.f;
+			if (Fish->Velocity.Length() > 1000.f)
+			{
+				Fish->Velocity /= Fish->Velocity.Length() / 1000.f;
+			}
 		}
 	}
 }
@@ -587,7 +591,11 @@ void AFishGroup::UpdateFishVelocities_FlashInward(float DeltaTime)
 	{
 		for(AFish* Fish : Fishes)
 		{
-			Fish->Velocity = (Fish->GetActorLocation() - Predator->GetActorLocation()).GetSafeNormal() * max_speed_current;
+			Fish->Velocity = (Predator->GetActorLocation() - Fish->GetActorLocation()).GetSafeNormal() * 1000.f;
+			if (Fish->Velocity.Length() > 1000.f)
+			{
+				Fish->Velocity /= Fish->Velocity.Length() / 1000.f;
+			}
 		}
 	}
 }
