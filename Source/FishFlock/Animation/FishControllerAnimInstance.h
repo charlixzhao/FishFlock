@@ -28,6 +28,9 @@ public:
 	UFUNCTION(BlueprintCallable)
 	void LeaveFastAvoid();
 
+	UFUNCTION(BlueprintCallable)
+	void ResetHourglassDirection();
+
 protected:
 	UPROPERTY(EditDefaultsOnly, Category="Config")
 	FName StateMachineName;

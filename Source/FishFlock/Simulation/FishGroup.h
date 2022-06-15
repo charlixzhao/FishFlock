@@ -40,6 +40,17 @@ public:
 	
 	bool IsAnyFishFront();
 	bool HasFlockShiftNinetyDegree();
+
+	UPROPERTY(EditAnywhere, Category = "Hourglass")
+	bool Hourglass_Initialized = false;
+
+	UPROPERTY(EditAnywhere, Category = "Hourglass")
+	FVector Hourglass_Initial_Vector;
+	UPROPERTY(EditAnywhere, Category = "Hourglass")
+	FVector Hourglass_Current_Vector;
+	
+	UPROPERTY(EditAnywhere, Category = "Hourglass")
+	int Hourglass_Turning_Direction = 0; // 0 -> uninitialized, 1 -> left, 2 -> right
 	
 protected:
 	// Called when the game starts or when spawned
@@ -143,15 +154,10 @@ private:
 
 	void UpdateFishVelocities_Hourglass(float DeltaTime);
 
-	UPROPERTY(EditAnywhere, Category = "Hourglass")
-	bool Hourglass_Initialized = false;
 
-	UPROPERTY(EditAnywhere, Category = "Hourglass")
-	FVector Hourglass_Initial_Vector;
-	UPROPERTY(EditAnywhere, Category = "Hourglass")
-	FVector Hourglass_Current_Vector;
 	
-private:
+	
+	
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Components", meta=(AllowPrivateAccess="true"))
 	TObjectPtr<USceneComponent> SceneRoot;
 	

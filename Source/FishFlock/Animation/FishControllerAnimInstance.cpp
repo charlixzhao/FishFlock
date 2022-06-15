@@ -66,6 +66,17 @@ void UFishControllerAnimInstance::LeaveFastAvoid()
 	if(FishGroup) FishGroup->LeaveFastAvoid();
 }
 
+void UFishControllerAnimInstance::ResetHourglassDirection()
+{
+	if(FishGroup)
+	{
+		FishGroup->Hourglass_Turning_Direction = 0;
+		FishGroup->Hourglass_Initialized = false;
+		FishGroup->Hourglass_Initial_Vector = FVector(0,0,0);
+		FishGroup->Hourglass_Current_Vector = FVector(0,0,0);
+	}
+}
+
 void UFishControllerAnimInstance::UpdatePredatorState()
 {
 	const APredatorCharacter* PredatorCharacter =

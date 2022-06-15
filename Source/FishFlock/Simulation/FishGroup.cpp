@@ -3,6 +3,7 @@
 
 #include "FishGroup.h"
 #include "Fish.h"
+#include "VectorTypes.h"
 #include "Animation/FishControllerAnimInstance.h"
 #include "Components/SplineComponent.h"
 #include "GameFramework/Character.h"
@@ -766,24 +767,130 @@ void AFishGroup::UpdateFishVelocities_Hourglass(float DeltaTime)
 		Hourglass_Initialized = true;
 	}
 
+	TArray<TObjectPtr<AFish>> Hourglass_Left;
+	TArray<TObjectPtr<AFish>> Hourglass_Right;
+
+	for(AFish *Fish: Fishes)
+	{
+		const FVector A = Predator->GetVelocity();
+		const FVector B = Fish->GetActorLocation() - Predator->GetActorLocation();
+		//Left
+		if ((A.X * B.Y - B.X * A.Y) < 0)
+		{
+			Hourglass_Left.Add(Fish);
+		}
+		else
+		{
+			Hourglass_Right.Add(Fish);
+		}
+	}
+
+	//initialize turning direction only if it has not been initialized
+	if(Hourglass_Turning_Direction == 0)
+	{
+		if(Hourglass_Left.Num() > Hourglass_Right.Num())
+		{
+			Hourglass_Turning_Direction = 1;
+		}
+		else Hourglass_Turning_Direction = 2;
+	}
+	
 	//Orthogonal Velocity, turning clockwise 90 degrees
-	const double Turning_Scale = 0.008;
-	FVector Turning_Velocity(0,0,0);
+	const double Turning_Scale = 0.04;
+	
+	/*FVector Turning_Velocity(0,0,0);
 	Turning_Velocity.X = Average_Velocity.Y * -1;
 	Turning_Velocity.Y = Average_Velocity.X;
-	Turning_Velocity.Z = 0;
+	Turning_Velocity.Z = 0;*/
 
+	FVector Turning_Velocity(0,0,0);
+	if(Hourglass_Turning_Direction == 2)
+	{
+		Turning_Velocity.X = -Average_Velocity.Y;
+		Turning_Velocity.Y = Average_Velocity.X;
+		Turning_Velocity.Z = 0;
+	}
+	else
+	{
+		Turning_Velocity.X = Average_Velocity.Y;
+		Turning_Velocity.Y = -Average_Velocity.X;
+		Turning_Velocity.Z = 0;
+	}
+
+	if(Hourglass_Left.Num() > 0)
+	{
+		for(AFish *Fish: Hourglass_Left)
+		{
+			//left fish, if turn left
+			if(Hourglass_Turning_Direction == 1)
+			{
+				if(HasFlockShiftNinetyDegree() == false)
+				{
+					Fish->Velocity += Turning_Velocity * Turning_Scale;
+				}
+				Fish->Velocity /= Fish->Velocity.Length() / 900.f;
+		
+				//Clamp to max speed
+				if (Fish->Velocity.Length() > 900.f)
+				{
+					Fish->Velocity /= Fish->Velocity.Length() / 900.f;
+				}
+			}
+			else
+			{
+				if(HasFlockShiftNinetyDegree() == false)
+				{
+					Fish->Velocity += Turning_Velocity * Turning_Scale;
+				}
+				Fish->Velocity /= Fish->Velocity.Length() / 1500.f;
+		
+				//Clamp to max speed
+				if (Fish->Velocity.Length() > 1500.f)
+				{
+					Fish->Velocity /= Fish->Velocity.Length() / 1500.f;
+				}
+			}
+		}
+	}
+	//right fishes
+	if(Hourglass_Right.Num() > 0)
+	{
+		for(AFish *Fish: Hourglass_Right)
+		{
+			//right fish, if turn right
+			if(Hourglass_Turning_Direction == 2)
+			{
+				if(HasFlockShiftNinetyDegree() == false)
+				{
+					Fish->Velocity += Turning_Velocity * Turning_Scale;
+				}
+				Fish->Velocity /= Fish->Velocity.Length() / 900.f;
+		
+				//Clamp to max speed
+				if (Fish->Velocity.Length() > 900.f)
+				{
+					Fish->Velocity /= Fish->Velocity.Length() / 900.f;
+				}
+			}
+			else
+			{
+				if(HasFlockShiftNinetyDegree() == false)
+				{
+					Fish->Velocity += Turning_Velocity * Turning_Scale;
+				}
+				Fish->Velocity /= Fish->Velocity.Length() / 1500.f;
+		
+				//Clamp to max speed
+				if (Fish->Velocity.Length() > 1500.f)
+				{
+					Fish->Velocity /= Fish->Velocity.Length() / 1500.f;
+				}
+			}
+		}
+	}
 	FVector temp_current_average(0,0,0);
 	for(AFish *Fish:Fishes)
 	{
-		Fish->Velocity += Turning_Velocity * Turning_Scale;
-		Fish->Velocity /= Fish->Velocity.Length() / max_speed_escape;
-		
-		//Clamp to max speed
-		if (Fish->Velocity.Length() > max_speed_escape)
-		{
-			Fish->Velocity /= Fish->Velocity.Length() / max_speed_escape;
-		}
 		temp_current_average += Fish->Velocity;
 	}
 	Hourglass_Current_Vector = temp_current_average / Fishes.Num();
@@ -806,7 +913,7 @@ bool AFishGroup::HasFlockShiftNinetyDegree()
 {
 	if(Hourglass_Initialized)
 	{
-		if(abs(Hourglass_Initial_Vector.CosineAngle2D(Hourglass_Current_Vector)) < 0.2)
+		if((Hourglass_Initial_Vector.CosineAngle2D(Hourglass_Current_Vector)) < 0)
 		{
 			return true;
 		}
