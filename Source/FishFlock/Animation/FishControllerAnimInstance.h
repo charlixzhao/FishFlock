@@ -23,10 +23,15 @@ public:
 
 	UFUNCTION(BlueprintCallable)
 	void EnterFastAvoid();
-
 	
 	UFUNCTION(BlueprintCallable)
 	void LeaveFastAvoid();
+
+	UFUNCTION(BlueprintCallable)
+	void EnterSkitter();
+
+	UFUNCTION(BlueprintCallable)
+	void LeaveSkitter();
 
 	UFUNCTION(BlueprintCallable)
 	void ResetHourglassDirection();
@@ -51,6 +56,9 @@ protected:
 	float AvoidDistance_Threshold = 100.f;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Threshold")
+	float FastAvoidTime_Threshold = 3.f;
+	
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Threshold")
 	float ChaseTime_Threshold = 5.f;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Threshold")
@@ -64,12 +72,15 @@ protected:
 protected:
 	UPROPERTY(BlueprintReadOnly, Category="Transition")
 	float CentroidToPredatorDistance;
-
+	
 	UPROPERTY(BlueprintReadOnly, Category="Transition")
 	EPredatorState PredatorState;
 
 	UPROPERTY(BlueprintReadOnly, Category="Transition")
 	bool bVision;
+
+	UPROPERTY(BlueprintReadOnly, Category="Transition")
+	bool bFeelRipple;
 		
 	UPROPERTY(BlueprintReadOnly, Category="Transition")
 	float RippleForce;
@@ -82,6 +93,9 @@ protected:
 	
 	UPROPERTY(BlueprintReadOnly, Category="Transition")
 	float ChaseTime = -1.f;
+
+	UPROPERTY(BlueprintReadOnly, Category="Transition")
+	float FastAvoidTime = -1.f;
 
 	UPROPERTY(BlueprintReadWrite, Category="Transition")
 	float HerdTime = -1.f;

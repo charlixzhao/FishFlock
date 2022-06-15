@@ -22,20 +22,23 @@ public:
 	AFishGroup();
 
 	bool DoesAnyFishVision() const;
+	bool DoesAnyFishFeelRipple() const;
+	
 	TObjectPtr<ACharacter> Predator;
 	FVector Centroid;
 	EPredatorState PredatorState;
 	float CentroidToPredatorDistance;
+	float NearestToPredatorDistance;
 	float RippleForce;
-	
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Config", meta=(AllowPrivateAccess="true"))
 	float Fear;
 	//float NearestNeighbourDistance;
 	TMap<TObjectPtr<AFish>, TArray<TObjectPtr<AFish>>> NearestNeighbours;
 
 	void EnterFastAvoid();
-	
 	void LeaveFastAvoid();
+
+	void EnterSkitter();
 
 	
 	bool IsAnyFishFront();
@@ -121,10 +124,17 @@ private:
 	TArray<FVector> DetectNoCollisionDirections(AFish* Fish) const;
 	
 	void UpdateFishVelocities_Wander(float DeltaTime);
-	//Herd
 	void UpdateFishVelocities_Herd(float DeltaTime);
+	void UpdateFishVelocities_Avoid(float DeltaTime);
+
+	void UpdateFishVelocities_FastAvoid(float DeltaTime);
+
+	void UpdateFishVelocities_Skitter(float DeltaTime);
+
+	
 	//Compact
 	void UpdateFishVelocities_Compact(float DeltaTime);
+	
 	FVector Rule_2_Compact(AFish const* Fish);
 
 	//Ball
@@ -153,10 +163,6 @@ private:
 	void UpdateFishVelocities_Fountain(float DeltaTime);
 
 	void UpdateFishVelocities_Hourglass(float DeltaTime);
-
-
-	
-	
 	
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Components", meta=(AllowPrivateAccess="true"))
 	TObjectPtr<USceneComponent> SceneRoot;

@@ -51,6 +51,15 @@ bool AFishGroup::DoesAnyFishVision() const
 	return false;
 }
 
+bool AFishGroup::DoesAnyFishFeelRipple() const
+{
+	for(const AFish* Fish : Fishes)
+	{
+		if(Fish->bFeelRipple) return true;
+	}
+	return false;
+}
+
 TArray<TObjectPtr<AFish>> AFishGroup::GetNearestNeighboursByPercentage(AFish const* InFish, float Percentage)
 {
 	struct CompareKey
@@ -142,6 +151,7 @@ auto FindNearest(TArray<T> const& Values, T const& Goal, Dist DistFunc)
 
 void AFishGroup::UpdateFishVelocities_Wander(float DeltaTime)
 {
+	max_speed_current = max_speed_normal;
 	FVector SplineTargetCenter;
 	for(int32 Idx = 0; Idx < Fishes.Num(); ++Idx)
 	{
@@ -191,8 +201,14 @@ void AFishGroup::UpdateFishVelocities_Wander(float DeltaTime)
 }
 
 
+void AFishGroup::UpdateFishVelocities_Skitter(float DeltaTime)
+{
+	max_speed_current = max_speed_normal;
+}
+
 void AFishGroup::UpdateFishVelocities_Compact(float DeltaTime)
 {
+	max_speed_current = max_speed_normal;
 	for(int32 Idx = 0; Idx < Fishes.Num(); ++Idx)
 	{
 		AFish* Fish = Fishes[Idx];
@@ -241,11 +257,37 @@ void AFishGroup::UpdateFishVelocities_Compact(float DeltaTime)
 
 void AFishGroup::UpdateFishVelocities_Herd(float DeltaTime)
 {
+	max_speed_current = max_speed_fast_avoid;
+	if(Predator)
+	{
+		const FVector DirectionToPredator = Centroid - Predator->GetActorLocation();
+		for(AFish* Fish : Fishes)
+		{
+			Fish->Velocity = DirectionToPredator.GetSafeNormal() * max_speed_fast_avoid;
+		}
+	}
+}
+
+void AFishGroup::UpdateFishVelocities_Avoid(float DeltaTime)
+{
+	max_speed_current = max_speed_normal;
 	if(Predator)
 	{
 		for(AFish* Fish : Fishes)
 		{
 			Fish->Velocity = (Fish->GetActorLocation() - Predator->GetActorLocation()).GetSafeNormal() * max_speed_current;
+		}
+	}
+}
+
+void AFishGroup::UpdateFishVelocities_FastAvoid(float DeltaTime)
+{
+	max_speed_current = max_speed_fast_avoid;
+	if(Predator)
+	{
+		for(AFish* Fish : Fishes)
+		{
+			Fish->Velocity = (Fish->GetActorLocation() - Predator->GetActorLocation()).GetSafeNormal() * max_speed_fast_avoid;
 		}
 	}
 }
@@ -258,6 +300,15 @@ void AFishGroup::EnterFastAvoid()
 void AFishGroup::LeaveFastAvoid()
 {
 	max_speed_current = max_speed_normal;
+}
+
+void AFishGroup::EnterSkitter()
+{
+	max_speed_current = max_speed_normal;
+	for(const auto Fish : Fishes)
+	{
+		Fish->Velocity = FMath::VRand() * max_speed_current;
+	}
 }
 
 // Called when the game starts or when spawned
@@ -362,12 +413,19 @@ void AFishGroup::UpdateFishVelocities(float DeltaTime)
 	if(CurrentStateName == "Wander") UpdateFishVelocities_Wander(DeltaTime);
 	else if (CurrentStateName == "Compact") UpdateFishVelocities_Compact(DeltaTime);
 	else if (CurrentStateName == "Ball") UpdateFishVelocities_Ball(DeltaTime);
+	else if (CurrentStateName == "Avoid") UpdateFishVelocities_Avoid(DeltaTime);
+	else if (CurrentStateName == "FastAvoid") UpdateFishVelocities_FastAvoid(DeltaTime);
+	else if (CurrentStateName == "Skitter") UpdateFishVelocities_Skitter(DeltaTime);
 	else if (CurrentStateName == "Herd") UpdateFishVelocities_Herd(DeltaTime);
 	else if (CurrentStateName == "FlashOut") UpdateFishVelocities_FlashOutward(DeltaTime);
 	else if (CurrentStateName == "FlashIn") UpdateFishVelocities_FlashInward(DeltaTime);
 	else if (CurrentStateName == "Split") UpdateFishVelocities_Split(DeltaTime);
 	else if (CurrentStateName == "Fountain") UpdateFishVelocities_Fountain(DeltaTime);
 	else if (CurrentStateName == "Hourglass") UpdateFishVelocities_Hourglass(DeltaTime);
+	else
+	{
+		ensureMsgf(false, TEXT("enter a state which is bound to any updating function"));
+	}
 }
 
 void AFishGroup::UpdateControlParameters(float DeltaTime)
@@ -376,7 +434,9 @@ void AFishGroup::UpdateControlParameters(float DeltaTime)
 	for(const AFish* Fish : Fishes) LocationSum += Fish->GetActorLocation();
 	Centroid = LocationSum / Fishes.Num();
 	CentroidToPredatorDistance = FVector::Distance(Centroid, Predator->GetActorLocation());
-	
+	TArray<float> Distance;
+	for(auto const Fish:Fishes) Distance.Add(FVector::Distance(Fish->GetActorLocation(), Predator->GetActorLocation()));
+	NearestToPredatorDistance = FMath::Min(Distance);
 
 	/*
 	TArray<float> Distance;

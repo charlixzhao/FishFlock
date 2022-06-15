@@ -44,12 +44,15 @@ private:
 	
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Config", meta=(AllowPrivateAccess="true"))
 	float VisionDistance = 300.f;
-	
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Config", meta=(AllowPrivateAccess="true"))
+	float FeelRippleDistance = 150.f;
 
 private:
 	int32 Index = -1;
 	TObjectPtr<class AFishGroup> BelongingGroup;
 	bool bVision;
+	bool bFeelRipple;
 	float CumulativeWanderDistance;
 	
 	friend struct FFishCommunicationSystem;

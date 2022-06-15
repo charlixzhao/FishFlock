@@ -53,5 +53,6 @@ void AFish::Tick(float DeltaTime)
 	FVector const DirectionToPredator = (BelongingGroup->Predator->GetActorLocation() - GetActorLocation()).GetSafeNormal();
 	float const Angle = FMath::RadiansToDegrees(FMath::Acos(FishForward.Dot(DirectionToPredator)));
 	bVision = Angle <= 150.f && FVector::Distance(GetActorLocation(), BelongingGroup->Predator->GetActorLocation()) < VisionDistance;
+	bFeelRipple = FVector::Distance(GetActorLocation(), BelongingGroup->Predator->GetActorLocation()) < FeelRippleDistance;
 }
 

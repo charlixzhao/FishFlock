@@ -32,8 +32,10 @@ void UFishControllerAnimInstance::UpdateControllerState(float DeltaTime)
 	{
 		CentroidToPredatorDistance = FishGroup->CentroidToPredatorDistance;
 		bVision = FishGroup->DoesAnyFishVision();
+		bFeelRipple = FishGroup->DoesAnyFishFeelRipple();
 		Fear = FishGroup->Fear;
 		RippleForce = FishGroup->RippleForce;
+		if(FastAvoidTime >= 0.f) FastAvoidTime += DeltaTime;
 		if(SkitterTime >= 0.f) SkitterTime += DeltaTime;
 		if(HerdTime >= 0.f) HerdTime += DeltaTime;
 		if(ChaseTime >= 0.f) ChaseTime += DeltaTime;
@@ -58,12 +60,28 @@ void UFishControllerAnimInstance::UpdateControllerState(float DeltaTime)
 
 void UFishControllerAnimInstance::EnterFastAvoid()
 {
+	FastAvoidTime = 0.f;
 	if(FishGroup) FishGroup->EnterFastAvoid();
 }
 
 void UFishControllerAnimInstance::LeaveFastAvoid()
 {
+	FastAvoidTime = -1.f;
 	if(FishGroup) FishGroup->LeaveFastAvoid();
+}
+
+void UFishControllerAnimInstance::EnterSkitter()
+{
+	SkitterTime = 0.f;
+	if(FishGroup)
+	{
+		FishGroup->EnterSkitter();
+	}
+}
+
+void UFishControllerAnimInstance::LeaveSkitter()
+{
+	SkitterTime = -1.f;
 }
 
 void UFishControllerAnimInstance::ResetHourglassDirection()
@@ -85,9 +103,10 @@ void UFishControllerAnimInstance::UpdatePredatorState()
 	{
 		const EPredatorState LastState = PredatorState;
 		PredatorState = EPredatorState::None;
-		if(bVision) PredatorState = EPredatorState::Presence;
-		if(bVision && PredatorCharacter->PredatorState == EPredatorState::Chase) PredatorState = EPredatorState::Chase;
-		if(bVision && PredatorCharacter->PredatorState == EPredatorState::Attack) PredatorState = EPredatorState::Attack;
+		const bool bPredatorNear = bVision || bFeelRipple;
+		if(bPredatorNear) PredatorState = EPredatorState::Presence;
+		if(bPredatorNear && PredatorCharacter->PredatorState == EPredatorState::Chase) PredatorState = EPredatorState::Chase;
+		if(bPredatorNear && PredatorCharacter->PredatorState == EPredatorState::Attack) PredatorState = EPredatorState::Attack;
 		if(LastState != EPredatorState::Chase && PredatorState == EPredatorState::Chase) ChaseTime = 0.f;
 		if(LastState == EPredatorState::Chase && PredatorState != EPredatorState::Chase) ChaseTime = -1.f;
 	}
