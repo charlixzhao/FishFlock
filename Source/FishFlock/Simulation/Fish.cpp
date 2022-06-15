@@ -25,11 +25,23 @@ AFish::AFish()
 	Arrow->SetupAttachment(RootComponent);
 }
 
+float AFish::GetSwimFastSpeed() const
+{
+	if(BelongingGroup)
+	{
+		return BelongingGroup->max_speed_fast_avoid;
+	}
+	else
+	{
+		return 0.f;
+	}
+	
+}
+
 // Called when the game starts or when spawned
 void AFish::BeginPlay()
 {
 	Super::BeginPlay();
-	
 }
 
 // Called every frame

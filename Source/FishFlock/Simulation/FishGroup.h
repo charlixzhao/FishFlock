@@ -49,8 +49,11 @@ protected:
 	TSubclassOf<AFish> FishClass;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Config")
-	int32 FishNum;
+	int32 FishNum = 20;
 
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Config")
+	int32 LeaderNum = 3;
+	
 	UPROPERTY(EditDefaultsOnly, Category = "Communication")
 	float CommunicationInterval = 0.5f;
 	
@@ -95,14 +98,16 @@ public:
 
 private:
 	void InitFishPositions();
+	void RandomChooseLeaders();
 	void UpdateFishVelocities(float DeltaTime);
 	void UpdateControlParameters(float DeltaTime);
+	FVector Rule_FollowLeaders(AFish const* Fish);
 	FVector Rule_1_Cohesion(AFish const* Fish);
 	FVector Rule_2_Separation (AFish const* Fish);
 	FVector Rule_3_Alignment(AFish const* Fish);
 	TArray<TObjectPtr<AFish>> GetNearestNeighboursByPercentage(AFish const* Fish, float Percentage);
 
-	TArray<FVector> CollisionAvoidance(AFish* Fish);
+	TArray<FVector> DetectNoCollisionDirections(AFish* Fish) const;
 	
 	void UpdateFishVelocities_Wander(float DeltaTime);
 	//Herd
@@ -121,6 +126,10 @@ private:
 	void UpdateFishVelocities_FlashOutward(float DeltaTime);
 	void UpdateFishVelocities_FlashInward(float DeltaTime);
 
+	
+	UPROPERTY(EditAnywhere, Category = "Debug")
+	bool bDrawCollisionDebug;
+	
 	UPROPERTY(EditAnywhere, Category = "Split")
 	AFish* LeftLeader = nullptr;
 	UPROPERTY(EditAnywhere, Category = "Split")
@@ -160,8 +169,12 @@ private:
 
 	UPROPERTY(BlueprintReadOnly, meta=(AllowPrivateAccess="true"))
 	TArray<TObjectPtr<AFish>> SplitRight;
+
 	
-	float CumulativeWanderDistance = 0.f;
+	
+	TArray<AFish*> Leaders;
+
+	friend class AFish;
 	
 };
 

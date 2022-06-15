@@ -15,7 +15,8 @@ public:
 	// Sets default values for this actor's properties
 	AFish();
 
-	
+	UFUNCTION(BlueprintPure)
+	float GetSwimFastSpeed() const;
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
@@ -49,6 +50,7 @@ private:
 	int32 Index = -1;
 	TObjectPtr<class AFishGroup> BelongingGroup;
 	bool bVision;
+	float CumulativeWanderDistance;
 	
 	friend struct FFishCommunicationSystem;
 	friend class AFishGroup;
