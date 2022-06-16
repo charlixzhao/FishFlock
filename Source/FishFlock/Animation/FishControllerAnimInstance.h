@@ -36,6 +36,9 @@ public:
 	UFUNCTION(BlueprintCallable)
 	void ResetHourglassDirection();
 
+	UFUNCTION(BlueprintCallable)
+	void ResetSplitStatus();
+
 protected:
 	UPROPERTY(EditDefaultsOnly, Category="Config")
 	FName StateMachineName;

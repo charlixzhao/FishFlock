@@ -95,6 +95,20 @@ void UFishControllerAnimInstance::ResetHourglassDirection()
 	}
 }
 
+void UFishControllerAnimInstance::ResetSplitStatus()
+{
+	if(FishGroup)
+	{
+		FishGroup->Split_Initialized = false;
+		FishGroup->SplitLeft.Empty();
+		FishGroup->SplitRight.Empty();
+		FishGroup->LeftLeader = nullptr;
+		FishGroup->RightLeader = nullptr;
+		FishGroup->LeftLeaderEscapeDirection = FVector(0,0,0);
+		FishGroup->RightLeaderEscapeDirection = FVector(0,0,0);
+	}
+}
+
 void UFishControllerAnimInstance::UpdatePredatorState()
 {
 	const APredatorCharacter* PredatorCharacter =
