@@ -35,6 +35,7 @@ void UFishControllerAnimInstance::UpdateControllerState(float DeltaTime)
 		bFeelRipple = FishGroup->DoesAnyFishFeelRipple();
 		Fear = FishGroup->Fear;
 		RippleForce = FishGroup->RippleForce;
+		AverageDistanceFromCentroid = FishGroup->AverageDistanceFromCentroid;
 		if(FastAvoidTime >= 0.f) FastAvoidTime += DeltaTime;
 		if(SkitterTime >= 0.f) SkitterTime += DeltaTime;
 		if(HerdTime >= 0.f) HerdTime += DeltaTime;
@@ -44,14 +45,18 @@ void UFishControllerAnimInstance::UpdateControllerState(float DeltaTime)
 		if(FountainTime >= 0.f)
 		{
 			FountainTime += DeltaTime;
-			//TODO add frontal fish check if Fountain behaves correctly
-			//FishGroup->IsAnyFishFront();
 		}
 		if(HourglassTime >= 0.f)
 		{
 			HourglassTime += DeltaTime;
-			//TODO add 90 Degree check if Hourglass behaves correctly
-			//FishGroup->HasFlockShiftNinetyDegree();
+		}
+		if(JoinTime >= 0.f)
+		{
+			JoinTime += DeltaTime;
+		}
+		if(SplitTime >= 0.f)
+		{
+			SplitTime += DeltaTime;
 		}
 		UpdatePredatorState();
 	}

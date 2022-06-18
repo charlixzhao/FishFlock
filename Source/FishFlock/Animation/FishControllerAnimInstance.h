@@ -117,6 +117,16 @@ protected:
 
 	UPROPERTY(BlueprintReadWrite, Category="Transition")
 	float HourglassTime = -1.f;
+	
+	UPROPERTY(BlueprintReadWrite, Category="Transition")
+	float JoinTime = -1.f;
+
+	UPROPERTY(BlueprintReadWrite, Category="Transition")
+	float SplitTime = -1.f;
+
+	UPROPERTY(BlueprintReadWrite, Category="Transition")
+	float AverageDistanceFromCentroid = 0.f;
+	
 private:
 	void UpdatePredatorState();
 private:

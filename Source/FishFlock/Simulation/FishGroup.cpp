@@ -225,7 +225,7 @@ void AFishGroup::UpdateFishVelocities_Compact(float DeltaTime)
 			FVector Cohesion = Rule_1_Cohesion(Fish);
 			FVector Separation = Rule_2_Separation(Fish);
 			FVector Alignment = Rule_3_Alignment(Fish);
-			TargetVelocity += rule_1_scale * Cohesion + rule_2_scale * Separation + rule_3_scale * Alignment;
+			TargetVelocity += rule_1_scale*2 * Cohesion + rule_2_scale * Separation + rule_3_scale * Alignment;
 			TargetVelocity = TargetVelocity.GetSafeNormal() * max_speed_current;
 		}
 
@@ -402,7 +402,6 @@ void AFishGroup::RandomChooseLeaders()
 	{
 		Leaders.Add(FishesShuffled[Idx]);
 	}
-	
 }
 
 void AFishGroup::UpdateFishVelocities(float DeltaTime)
@@ -422,6 +421,7 @@ void AFishGroup::UpdateFishVelocities(float DeltaTime)
 	else if (CurrentStateName == "Split") UpdateFishVelocities_Split(DeltaTime);
 	else if (CurrentStateName == "Fountain") UpdateFishVelocities_Fountain(DeltaTime);
 	else if (CurrentStateName == "Hourglass") UpdateFishVelocities_Hourglass(DeltaTime);
+	else if (CurrentStateName == "Join") UpdateFishVelocities_Join(DeltaTime);
 	else
 	{
 		ensureMsgf(false, TEXT("enter a state which is bound to any updating function"));
@@ -993,6 +993,60 @@ void AFishGroup::UpdateFishVelocities_Hourglass(float DeltaTime)
 		temp_current_average += Fish->Velocity;
 	}
 	Hourglass_Current_Vector = temp_current_average / Fishes.Num();
+}
+
+void AFishGroup::UpdateFishVelocities_Join(float DeltaTime)
+{
+	max_speed_current = max_speed_normal;
+	for(int32 Idx = 0; Idx < Fishes.Num(); ++Idx)
+	{
+		AFish* Fish = Fishes[Idx];
+		FVector TargetVelocity;
+		if(Leaders.Contains(Fish))
+		{
+			Fish->CumulativeWanderDistance += max_speed_current * DeltaTime;
+			Fish->CumulativeWanderDistance = FMath::Fmod(Fish->CumulativeWanderDistance, 	TravelSpline->GetSplineLength());
+			const FVector LeaderLocation = TravelSpline->GetWorldLocationAtDistanceAlongSpline(Fish->CumulativeWanderDistance);
+			TargetVelocity = (LeaderLocation - Fish->GetActorLocation()).GetSafeNormal() * max_speed_current;
+		}
+		else
+		{
+			FVector Cohesion = Rule_1_Cohesion(Fish);
+			FVector Separation = Rule_2_Separation(Fish);
+			FVector Alignment = Rule_3_Alignment(Fish);
+			TargetVelocity += rule_1_scale*10 * Cohesion + rule_2_scale * Separation + rule_3_scale * Alignment;
+			TargetVelocity = TargetVelocity.GetSafeNormal() * max_speed_current;
+		}
+
+		const TArray<FVector> NoCollisionDirections = DetectNoCollisionDirections(Fish);
+		if(NoCollisionDirections.Num() == 0)
+		{
+			Fish->Velocity = FVector::ZeroVector;
+			return;
+		}
+		else
+		{
+			//find the possible direction which smallest angle with the current velocity
+			float NearestValue;
+			int32 ArgNearestDirection;
+			Tie(ArgNearestDirection, NearestValue) = FindNearest(NoCollisionDirections, TargetVelocity, AngleBetweenVectors);
+			const FVector NearestDirection = NoCollisionDirections[ArgNearestDirection].GetSafeNormal() * max_speed_current;
+			if(NearestValue >= 5.f)
+			{
+				Fish->Velocity = FMath::VInterpTo(Fish->Velocity, NearestDirection, DeltaTime, 5.f);
+			}
+			else
+			{
+				Fish->Velocity = FMath::VInterpTo(Fish->Velocity, TargetVelocity, DeltaTime, 5.f);
+			}
+		}
+	}
+	
+	for(AFish *Fish:Fishes)
+	{
+		AverageDistanceFromCentroid += (Fish->GetActorLocation() - Centroid).Length();
+	}
+	AverageDistanceFromCentroid /= Fishes.Num();
 }
 
 bool AFishGroup::IsAnyFishFront()

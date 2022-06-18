@@ -81,6 +81,9 @@ public:
 
 	UPROPERTY(BlueprintReadOnly, meta=(AllowPrivateAccess="true"))
 	TArray<TObjectPtr<AFish>> SplitRight;
+
+	UPROPERTY(EditAnywhere, Category = "Join")
+	float AverageDistanceFromCentroid = 0.f;
 	
 protected:
 	// Called when the game starts or when spawned
@@ -184,6 +187,8 @@ private:
 	void UpdateFishVelocities_Fountain(float DeltaTime);
 
 	void UpdateFishVelocities_Hourglass(float DeltaTime);
+
+	void UpdateFishVelocities_Join(float DeltaTime);
 	
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Components", meta=(AllowPrivateAccess="true"))
 	TObjectPtr<USceneComponent> SceneRoot;
