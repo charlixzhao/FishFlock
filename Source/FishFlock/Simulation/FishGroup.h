@@ -46,6 +46,13 @@ public:
 	bool IsAnyFishFront();
 	bool HasFlockShiftNinetyDegree();
 
+	UPROPERTY(EditAnywhere, Category = "Flash")
+	bool Flash_Initialized = false;
+
+	UPROPERTY(EditAnywhere, Category = "Flash")
+	FVector Flash_Return_Position = FVector(0,0,0);
+	
+
 	UPROPERTY(EditAnywhere, Category = "Hourglass")
 	bool Hourglass_Initialized = false;
 
@@ -56,6 +63,29 @@ public:
 	
 	UPROPERTY(EditAnywhere, Category = "Hourglass")
 	int Hourglass_Turning_Direction = 0; // 0 -> uninitialized, 1 -> left, 2 -> right
+
+		
+	UPROPERTY(EditAnywhere, Category = "Split")
+	AFish* LeftLeader = nullptr;
+	UPROPERTY(EditAnywhere, Category = "Split")
+	AFish* RightLeader = nullptr;
+	UPROPERTY(EditAnywhere, Category = "Split")
+	bool Split_Initialized = false;
+	
+	UPROPERTY(EditAnywhere, Category = "Split")
+	FVector LeftLeaderEscapeDirection = FVector(0,0,0);
+
+	UPROPERTY(EditAnywhere, Category = "Split")
+	FVector RightLeaderEscapeDirection = FVector(0,0,0);
+	
+	UPROPERTY(BlueprintReadOnly, meta=(AllowPrivateAccess="true"))
+	TArray<TObjectPtr<AFish>> SplitLeft;
+
+	UPROPERTY(BlueprintReadOnly, meta=(AllowPrivateAccess="true"))
+	TArray<TObjectPtr<AFish>> SplitRight;
+
+	UPROPERTY(EditAnywhere, Category = "Join")
+	float AverageDistanceFromCentroid = 0.f;
 	
 protected:
 	// Called when the game starts or when spawned
@@ -152,19 +182,15 @@ private:
 	
 	UPROPERTY(EditAnywhere, Category = "Debug")
 	bool bDrawCollisionDebug;
-	
-	UPROPERTY(EditAnywhere, Category = "Split")
-	AFish* LeftLeader = nullptr;
-	UPROPERTY(EditAnywhere, Category = "Split")
-	AFish* RightLeader = nullptr;
-	UPROPERTY(EditAnywhere, Category = "Split")
-	bool Split_Initialized = false;
+
 	void UpdateFishVelocities_Split(float DeltaTime);
 	void Split_and_FindLeader();
 
 	void UpdateFishVelocities_Fountain(float DeltaTime);
 
 	void UpdateFishVelocities_Hourglass(float DeltaTime);
+
+	void UpdateFishVelocities_Join(float DeltaTime);
 	
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Components", meta=(AllowPrivateAccess="true"))
 	TObjectPtr<USceneComponent> SceneRoot;
@@ -178,11 +204,7 @@ private:
 	UPROPERTY(BlueprintReadOnly, meta=(AllowPrivateAccess="true"))
 	TArray<TObjectPtr<AFish>> Fishes;
 
-	UPROPERTY(BlueprintReadOnly, meta=(AllowPrivateAccess="true"))
-	TArray<TObjectPtr<AFish>> SplitLeft;
 
-	UPROPERTY(BlueprintReadOnly, meta=(AllowPrivateAccess="true"))
-	TArray<TObjectPtr<AFish>> SplitRight;
 
 	
 	

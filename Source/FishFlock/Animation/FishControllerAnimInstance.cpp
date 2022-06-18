@@ -40,6 +40,7 @@ void UFishControllerAnimInstance::UpdateControllerState(float DeltaTime)
 		bFeelRipple = FishGroup->DoesAnyFishFeelRipple();
 		Fear = FishGroup->Fear;
 		RippleForce = FishGroup->RippleForce;
+		AverageDistanceFromCentroid = FishGroup->AverageDistanceFromCentroid;
 		if(FastAvoidTime >= 0.f) FastAvoidTime += DeltaTime;
 		if(SkitterTime >= 0.f) SkitterTime += DeltaTime;
 		if(HerdTime >= 0.f) HerdTime += DeltaTime;
@@ -49,14 +50,18 @@ void UFishControllerAnimInstance::UpdateControllerState(float DeltaTime)
 		if(FountainTime >= 0.f)
 		{
 			FountainTime += DeltaTime;
-			//TODO add frontal fish check if Fountain behaves correctly
-			//FishGroup->IsAnyFishFront();
 		}
 		if(HourglassTime >= 0.f)
 		{
 			HourglassTime += DeltaTime;
-			//TODO add 90 Degree check if Hourglass behaves correctly
-			//FishGroup->HasFlockShiftNinetyDegree();
+		}
+		if(JoinTime >= 0.f)
+		{
+			JoinTime += DeltaTime;
+		}
+		if(SplitTime >= 0.f)
+		{
+			SplitTime += DeltaTime;
 		}
 		UpdatePredatorState();
 	}
@@ -89,6 +94,14 @@ void UFishControllerAnimInstance::LeaveSkitter()
 	SkitterTime = -1.f;
 }
 
+void UFishControllerAnimInstance::ResetFlash()
+{
+	if(FishGroup)
+	{
+		FishGroup->Flash_Return_Position = FVector(0,0,0);
+		FishGroup->Flash_Initialized = false;
+	}
+}
 void UFishControllerAnimInstance::ResetHourglassDirection()
 {
 	if(FishGroup)
@@ -97,6 +110,20 @@ void UFishControllerAnimInstance::ResetHourglassDirection()
 		FishGroup->Hourglass_Initialized = false;
 		FishGroup->Hourglass_Initial_Vector = FVector(0,0,0);
 		FishGroup->Hourglass_Current_Vector = FVector(0,0,0);
+	}
+}
+
+void UFishControllerAnimInstance::ResetSplitStatus()
+{
+	if(FishGroup)
+	{
+		FishGroup->Split_Initialized = false;
+		FishGroup->SplitLeft.Empty();
+		FishGroup->SplitRight.Empty();
+		FishGroup->LeftLeader = nullptr;
+		FishGroup->RightLeader = nullptr;
+		FishGroup->LeftLeaderEscapeDirection = FVector(0,0,0);
+		FishGroup->RightLeaderEscapeDirection = FVector(0,0,0);
 	}
 }
 
