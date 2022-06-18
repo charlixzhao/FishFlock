@@ -341,7 +341,7 @@ void AFishGroup::BeginPlay()
 		InitFishPositions();
 	}
 
-	UE_LOG(LogTemp, Warning, TEXT("fish num is %d"), Fishes.Num());
+	//UE_LOG(LogTemp, Warning, TEXT("fish num is %d"), Fishes.Num());
 }
 
 // Called every frame
@@ -799,12 +799,12 @@ void AFishGroup::UpdateFishVelocities_Fountain(float DeltaTime)
 		{
 			const FVector A = Predator->GetVelocity();
 			const FVector B = Fish->GetActorLocation() - Predator->GetActorLocation();
-			UE_LOG(LogTemp, Warning, TEXT("Predator Velocity: %f, %f, %f"), A.X,A.Y,A.Z);
+			//UE_LOG(LogTemp, Warning, TEXT("Predator Velocity: %f, %f, %f"), A.X,A.Y,A.Z);
 			
 			//Left
 			if ((A.X * B.Y - B.X * A.Y) < 0)
 			{
-				UE_LOG(LogTemp, Warning, TEXT("Left side adds one fish."));
+				//UE_LOG(LogTemp, Warning, TEXT("Left side adds one fish."));
 				
 				const FVector Runaway_Velocity = (Fish->GetActorLocation() - Predator->GetActorLocation()).GetSafeNormal();
 				//const FVector Rotational_Velocity = Predator_Velocity.GetSafeNormal() * -1;
@@ -819,7 +819,7 @@ void AFishGroup::UpdateFishVelocities_Fountain(float DeltaTime)
 			}
 			else
 			{
-				UE_LOG(LogTemp, Warning, TEXT("Right side adds one fish."));
+				//UE_LOG(LogTemp, Warning, TEXT("Right side adds one fish."));
 				
 				const FVector Runaway_Velocity = (Fish->GetActorLocation() - Predator->GetActorLocation()).GetSafeNormal();
 				FVector New_Velocity(-Runaway_Velocity.Y,Runaway_Velocity.X,Runaway_Velocity.Z);
