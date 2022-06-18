@@ -34,6 +34,9 @@ public:
 	void LeaveSkitter();
 
 	UFUNCTION(BlueprintCallable)
+	void ResetFlash();
+	
+	UFUNCTION(BlueprintCallable)
 	void ResetHourglassDirection();
 
 	UFUNCTION(BlueprintCallable)

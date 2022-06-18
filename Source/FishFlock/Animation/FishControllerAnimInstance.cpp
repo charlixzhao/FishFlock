@@ -84,6 +84,14 @@ void UFishControllerAnimInstance::LeaveSkitter()
 	SkitterTime = -1.f;
 }
 
+void UFishControllerAnimInstance::ResetFlash()
+{
+	if(FishGroup)
+	{
+		FishGroup->Flash_Return_Position = FVector(0,0,0);
+		FishGroup->Flash_Initialized = false;
+	}
+}
 void UFishControllerAnimInstance::ResetHourglassDirection()
 {
 	if(FishGroup)

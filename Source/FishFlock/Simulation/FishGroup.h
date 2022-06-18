@@ -44,6 +44,13 @@ public:
 	bool IsAnyFishFront();
 	bool HasFlockShiftNinetyDegree();
 
+	UPROPERTY(EditAnywhere, Category = "Flash")
+	bool Flash_Initialized = false;
+
+	UPROPERTY(EditAnywhere, Category = "Flash")
+	FVector Flash_Return_Position = FVector(0,0,0);
+	
+
 	UPROPERTY(EditAnywhere, Category = "Hourglass")
 	bool Hourglass_Initialized = false;
 
