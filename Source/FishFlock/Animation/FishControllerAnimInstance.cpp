@@ -15,6 +15,11 @@ void UFishControllerAnimInstance::NativeInitializeAnimation()
 	FishGroup = Cast<AFishGroup>(GetOwningActor());
 }
 
+FString UFishControllerAnimInstance::BP_GetCurrentStateName() const
+{
+	return GetCurrentStateName().ToString();
+}
+
 
 FName UFishControllerAnimInstance::GetCurrentStateName() const
 {

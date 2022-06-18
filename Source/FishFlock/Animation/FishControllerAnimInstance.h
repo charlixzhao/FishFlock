@@ -16,6 +16,10 @@ class FISHFLOCK_API UFishControllerAnimInstance : public UAnimInstance
 	GENERATED_BODY()
 public:
 	virtual void NativeInitializeAnimation() override;
+
+	UFUNCTION(BlueprintPure, DisplayName="GetCurrentStateName", meta=(ScriptName="GetCurrentStateName"))
+	FString BP_GetCurrentStateName() const;
+	
 	FName GetCurrentStateName() const;
 	
 	UFUNCTION(BlueprintCallable)

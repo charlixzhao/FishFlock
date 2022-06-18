@@ -30,8 +30,10 @@ public:
 	float CentroidToPredatorDistance;
 	float NearestToPredatorDistance;
 	float RippleForce;
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Config", meta=(AllowPrivateAccess="true"))
+	
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Config", meta=(AllowPrivateAccess="true"))
 	float Fear;
+	
 	//float NearestNeighbourDistance;
 	TMap<TObjectPtr<AFish>, TArray<TObjectPtr<AFish>>> NearestNeighbours;
 

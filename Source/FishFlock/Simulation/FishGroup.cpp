@@ -91,7 +91,8 @@ TArray<FVector> AFishGroup::DetectNoCollisionDirections(AFish* Fish) const
 	int32 MaxPointsNum = 10;
 	FVector Forward = UKismetMathLibrary::GetForwardVector(Fish->GetActorRotation());
 	float R = Fish->VisionDistance;
-	float Interval = 50.f;
+	int32 Iteration = 6;
+	float Interval = R / static_cast<float>(Iteration);
 	for(float Distance = 0.f; Distance <= R; Distance += Interval)
 	{
 		float n = R-Distance;
@@ -409,7 +410,6 @@ void AFishGroup::UpdateFishVelocities(float DeltaTime)
 {
 	//TODO: update the fish velocity (expressed in world frame)
 	FName const CurrentStateName = Cast<UFishControllerAnimInstance>(ControllerMesh->GetAnimInstance())->GetCurrentStateName();
-	GEngine->AddOnScreenDebugMessage(1, 2.f, FColor::Yellow, CurrentStateName.ToString());
 	if(CurrentStateName == "Wander") UpdateFishVelocities_Wander(DeltaTime);
 	else if (CurrentStateName == "Compact") UpdateFishVelocities_Compact(DeltaTime);
 	else if (CurrentStateName == "Ball") UpdateFishVelocities_Ball(DeltaTime);
