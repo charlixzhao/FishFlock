@@ -31,6 +31,7 @@ Executable Link
 [https://drive.google.com/file/d/1jnnI7lPkXXNE5jlP09CD8YzGAhu9LOJc/view?usp=sharing](https://drive.google.com/file/d/1jnnI7lPkXXNE5jlP09CD8YzGAhu9LOJc/view?usp=sharing)
 
 Note: the executable only supports Windows. Mac and Linux are not supported yet. Just download the .zip file and unzip it. Go into the Windows folder and double-click on FishFlock.exe, which should open the game.
+To reset the game to its starting state, you must close the process and re-open the .exe file. Close the game by presing ALT+F4.
 
 Representative Images
 ---------------------
